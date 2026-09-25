@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Player TV Study - Estilo cxtv</title>
+    <title>Player TV Study</title>
+    
+    <!-- CONFIGURAÇÕES PWA (ADICIONADO) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a1929">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TV Player">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='30'/><text x='96' y='125' font-size='90' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
+
     <style>
         :root {
             --bg-dark: #0f0f0f;
@@ -25,10 +34,7 @@
             overflow: hidden;
         }
 
-        .app-layout { 
-            display: flex; 
-            height: 100vh; 
-        }
+        .app-layout { display: flex; height: 100vh; }
 
         .sidebar {
             width: 380px;
@@ -198,20 +204,9 @@
 
         @media (max-width: 768px) {
             .app-layout { flex-direction: column; }
-            .sidebar { 
-                width: 100%; 
-                height: 50%; 
-                order: 2; 
-            }
-            .player-section { 
-                height: 50%; 
-                order: 1; 
-            }
-            .channel-list { 
-                grid-template-columns: repeat(3, 1fr); 
-                gap: 8px; 
-                padding: 10px; 
-            }
+            .sidebar { width: 100%; height: 50%; order: 2; }
+            .player-section { height: 50%; order: 1; }
+            .channel-list { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
         }
 
         @media (max-width: 400px) {
@@ -236,6 +231,11 @@
                     <span id="current-channel-title">Selecione um canal</span>
                 </div>
                 <div class="controls">
+                    <!-- BOTÃO DE INSTALAR (ADICIONADO) -->
+                    <button class="control-btn" id="install-btn" title="Instalar App" style="display: none;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L12 14M12 14L7 9M12 14L17 9M5 20L19 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    </button>
+
                     <button class="control-btn" id="play-pause-btn" title="Play/Pause" onclick="togglePlayPause()">
                         <svg id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         <svg id="icon-pause" viewBox="0 0 24 24" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
@@ -266,9 +266,30 @@
     </div>
 
     <script>
+        // --- LÓGICA DE INSTALAÇÃO PWA (ADICIONADO) ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex'; // Mostra o botão apenas se o navegador permitir instalar
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // --- RESTANTE DO CÓDIGO ---
         function getLogoUrl(id) {
             const logoMap = {
-                // --- LOGOS ATUALIZADOS ---
                 "globosp": "https://i.ibb.co/Cpm2HM3s/globo.webp",
                 "record": "https://i.ibb.co/DSF58Yz/record.png",
                 "sbt": "https://i.ibb.co/pjRjgW94/sbtsp.png",
@@ -277,8 +298,6 @@
                 "sportv": "https://i.ibb.co/HDcyFYV2/sportv.png",
                 "sportv2": "https://i.ibb.co/tpWMfSrL/sportv2.png",
                 "sportv3": "https://i.ibb.co/0pF06xMN/sportv3.png",
-                
-                // --- RESTANTE DOS LOGOS ---
                 "tvcultura": "https://i.ibb.co/DffwQptc/tvcultura.png",
                 "band": "https://i.ibb.co/5QgFks5/band.png",
                 "bandnews": "https://i.ibb.co/3YGLYTjt/bandnews.png",
@@ -303,7 +322,6 @@
                 "telecinecult": "https://i.ibb.co/v630bPJn/tccult.png",
                 "telecinefun": "https://i.ibb.co/ymTvmqkW/tcfun.png",
                 "telecinepipoca": "https://i.ibb.co/hJW8BD4g/tcpipoca.png",
-                "telecinetouch": "https://i.ibb.co/mVJr6D8Y/tctouch.png",
                 "space": "https://i.ibb.co/93CVX8VQ/space.png",
                 "cinemax": "https://i.ibb.co/Fqn4DF1x/cinemax.png",
                 "megapix": "https://i.ibb.co/qFV92hxQ/megapix.png",
@@ -357,7 +375,7 @@
                 { id: "hbosignature", name: "HBO Signature" }, { id: "max", name: "Max" },
                 { id: "telecinepremium", name: "TC Premium" }, { id: "telecineaction", name: "TC Action" },
                 { id: "telecinecult", name: "TC Cult" }, { id: "telecinefun", name: "TC Fun" },
-                { id: "telecinepipoca", name: "TC Pipoca" }, { id: "telecinetouch", name: "TC Touch" },
+                { id: "telecinepipoca", name: "TC Pipoca" },
                 { id: "space", name: "Space" }, { id: "cinemax", name: "Cinemax" },
                 { id: "megapix", name: "Megapix" }, { id: "axn", name: "AXN" },
                 { id: "sonychannel", name: "Sony" }, { id: "warnerchannel", name: "Warner" },
@@ -427,26 +445,18 @@
                         img.alt = channel.name;
                         img.className = 'channel-logo';
                         
-                        img.onload = function() {
-                            fallback.style.display = 'none';
-                        };
-                        
-                        img.onerror = function() {
-                            this.style.display = 'none';
-                            fallback.style.display = 'flex';
-                        };
+                        img.onload = function() { fallback.style.display = 'none'; };
+                        img.onerror = function() { this.style.display = 'none'; fallback.style.display = 'flex'; };
                         
                         logoContainer.appendChild(img);
                     }
 
                     card.appendChild(logoContainer);
-                    
                     card.addEventListener('click', () => playChannel(channel.id, channel.name, card));
                     listContainer.appendChild(card);
                     totalRendered++;
                 });
             });
-            console.log(`✅ Total de cards renderizados: ${totalRendered}`);
         }
 
         function playChannel(channelId, channelName, activeCard) {
@@ -460,7 +470,6 @@
 
             document.querySelectorAll('.channel-card').forEach(c => c.classList.remove('active'));
             activeCard.classList.add('active');
-            
             activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
@@ -468,11 +477,7 @@
             if (!mainIframe.src || mainIframe.src === window.location.href) return;
             isPlaying = !isPlaying;
             updatePlayPauseIcon();
-            try {
-                mainIframe.contentWindow.postMessage({ action: isPlaying ? 'play' : 'pause' }, '*');
-            } catch (e) {
-                console.warn("Controle limitado por CORS.");
-            }
+            try { mainIframe.contentWindow.postMessage({ action: isPlaying ? 'play' : 'pause' }, '*'); } catch (e) {}
         }
 
         function updatePlayPauseIcon() {
