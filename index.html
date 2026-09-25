@@ -2,16 +2,20 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Viewport otimizado para App Nativo (sem zoom, cobre o notch) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Player TV Study</title>
     
-    <!-- CONFIGURAÇÕES PWA (ADICIONADO) -->
+    <!-- CONFIGURAÇÕES PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a1929">
+    <meta name="background-color" content="#0a1929">
+    
+    <!-- Configurações específicas para iOS (iPhone/iPad) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TV Player">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='30'/><text x='96' y='125' font-size='90' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='40'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
 
     <style>
         :root {
@@ -26,15 +30,22 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* Otimizações de App Nativo */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             height: 100vh;
+            height: 100dvh; /* Altura dinâmica para mobile */
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Remove o flash azul ao tocar no Android */
+            -webkit-touch-callout: none; /* Desabilita o menu "salvar imagem" ao segurar o dedo */
+            -webkit-user-select: none; /* Impede seleção de texto no iOS */
+            user-select: none; /* Impede seleção de texto no Android */
+            overscroll-behavior: none; /* Impede o efeito de "elasticidade" ao rolar no final */
         }
 
-        .app-layout { display: flex; height: 100vh; }
+        .app-layout { display: flex; height: 100%; }
 
         .sidebar {
             width: 380px;
@@ -67,6 +78,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             background-color: var(--bg-sidebar);
+            -webkit-overflow-scrolling: touch; /* Rolagem suave nativa no iOS */
         }
         
         .channel-list::-webkit-scrollbar { width: 4px; }
@@ -93,13 +105,18 @@
             padding-bottom: 100%;
             position: relative;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Efeito de clique nativo de app (pressionar) */
+        .channel-card:active {
+            transform: scale(0.95);
         }
 
         .channel-card:hover {
-            transform: scale(1.03);
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             border-color: #3a6a9b;
         }
@@ -119,6 +136,7 @@
             align-items: center; 
             justify-content: center;
             padding: 10px;
+            pointer-events: none; /* Impede que a imagem interfira no clique do card */
         }
 
         .channel-logo { 
@@ -176,7 +194,9 @@
             justify-content: center; 
             cursor: pointer; 
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
+        .control-btn:active { transform: scale(0.9); }
         .control-btn:hover { background: var(--accent); border-color: var(--accent); }
         .control-btn svg { width: 16px; height: 16px; fill: currentColor; }
 
@@ -231,7 +251,6 @@
                     <span id="current-channel-title">Selecione um canal</span>
                 </div>
                 <div class="controls">
-                    <!-- BOTÃO DE INSTALAR (ADICIONADO) -->
                     <button class="control-btn" id="install-btn" title="Instalar App" style="display: none;">
                         <svg viewBox="0 0 24 24"><path d="M12 2L12 14M12 14L7 9M12 14L17 9M5 20L19 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     </button>
@@ -266,14 +285,23 @@
     </div>
 
     <script>
-        // --- LÓGICA DE INSTALAÇÃO PWA (ADICIONADO) ---
+        // --- REGISTRO DO SERVICE WORKER (O SEGREDO PARA REMOVER A SETA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registrado com sucesso:', registration.scope))
+                    .catch(error => console.log('Falha ao registrar SW:', error));
+            });
+        }
+
+        // --- LÓGICA DE INSTALAÇÃO PWA ---
         let deferredPrompt;
         const installBtn = document.getElementById('install-btn');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'flex'; // Mostra o botão apenas se o navegador permitir instalar
+            installBtn.style.display = 'flex'; 
         });
 
         installBtn.addEventListener('click', async () => {
@@ -504,6 +532,9 @@
                 screen.orientation.unlock();
             }
         });
+
+        // Desabilita o menu de contexto (segurar o dedo) em toda a página
+        document.addEventListener('contextmenu', event => event.preventDefault());
 
         renderChannels();
     </script>
