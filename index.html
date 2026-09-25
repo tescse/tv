@@ -2,19 +2,505 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Teste de Embed TMDB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Player TV Study - Estilo cxtv</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        iframe {
+        :root {
+            --bg-dark: #0f0f0f;
+            --bg-sidebar: #0a1929;
+            --bg-card: #1a2d42;
+            --accent: #4CAF50;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-layout { 
+            display: flex; 
+            height: 100vh; 
+        }
+
+        .sidebar {
+            width: 380px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid #1a3a5c;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header { 
+            padding: 15px; 
+            background: #0d2137;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        
+        .sidebar-header h2 { 
+            font-size: 1rem; 
+            color: #ffffff; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
+        .channel-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background-color: var(--bg-sidebar);
+        }
+        
+        .channel-list::-webkit-scrollbar { width: 4px; }
+        .channel-list::-webkit-scrollbar-track { background: transparent; }
+        .channel-list::-webkit-scrollbar-thumb { background: #1a3a5c; border-radius: 2px; }
+
+        .category-label {
+            grid-column: 1 / -1;
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: #7aa3c9;
+            font-weight: 700; 
+            margin: 8px 0 4px 0; 
+            padding: 4px 8px;
+            background: #0d2137;
+            border-radius: 4px;
+        }
+
+        .channel-card {
+            background-color: var(--bg-card);
+            border: 2px solid #2a4a6b;
+            border-radius: 10px;
             width: 100%;
-            height: 800px;
-            border: 2px solid #ccc;
+            padding-bottom: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .channel-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border-color: #3a6a9b;
+        }
+
+        .channel-card.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+
+        .logo-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .channel-logo { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+            display: block; 
+        }
+        
+        .channel-logo-fallback {
+            display: flex;
+            width: 100%; 
+            height: 100%; 
+            align-items: center; 
+            justify-content: center;
+            font-weight: 800; 
+            font-size: 1.2rem; 
+            color: #ffffff;
+            background: linear-gradient(135deg, #2a4a6b, #1a3a5c);
             border-radius: 8px;
+        }
+
+        .player-section { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #000; 
+            position: relative; 
+        }
+
+        .player-top-bar {
+            padding: 12px 20px; 
+            background: rgba(20, 20, 20, 0.95); 
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #333; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center; 
+            z-index: 20;
+        }
+
+        .channel-info { display: flex; align-items: center; gap: 12px; }
+        #current-channel-title { font-size: 1rem; font-weight: 600; color: #fff; }
+
+        .controls { display: flex; gap: 8px; }
+        .control-btn {
+            background: #333; 
+            border: 1px solid #444; 
+            color: #fff;
+            width: 36px; 
+            height: 36px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        .control-btn:hover { background: var(--accent); border-color: var(--accent); }
+        .control-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .iframe-container { flex: 1; position: relative; width: 100%; height: 100%; background: #000; }
+        #main-iframe { width: 100%; height: 100%; border: none; display: none; }
+
+        .placeholder-screen {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            text-align: center; 
+            color: #888;
+        }
+        .placeholder-screen svg { width: 64px; height: 64px; margin-bottom: 15px; stroke: #444; }
+
+        .iframe-container:fullscreen { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .iframe-container:fullscreen #main-iframe { width: 100%; height: 100%; display: block; }
+
+        @media (max-width: 768px) {
+            .app-layout { flex-direction: column; }
+            .sidebar { 
+                width: 100%; 
+                height: 50%; 
+                order: 2; 
+            }
+            .player-section { 
+                height: 50%; 
+                order: 1; 
+            }
+            .channel-list { 
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 8px; 
+                padding: 10px; 
+            }
+        }
+
+        @media (max-width: 400px) {
+            .channel-list { gap: 6px; padding: 8px; }
         }
     </style>
 </head>
 <body>
-    <h2>Teste de Incorporação do TMDB (ID: 1762120)</h2>
-    <iframe src="https://www.themoviedb.org/movie/1762120" title="TMDB Movie Page"></iframe>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📺 Canais</h2>
+            </div>
+            <div class="channel-list" id="channel-list-container"></div>
+        </aside>
+
+        <main class="player-section">
+            <div class="player-top-bar">
+                <div class="channel-info">
+                    <span style="color: var(--accent); font-size: 1rem;">●</span>
+                    <span id="current-channel-title">Selecione um canal</span>
+                </div>
+                <div class="controls">
+                    <button class="control-btn" id="play-pause-btn" title="Play/Pause" onclick="togglePlayPause()">
+                        <svg id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <svg id="icon-pause" viewBox="0 0 24 24" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    </button>
+                    <button class="control-btn" title="Tela Cheia" onclick="toggleFullscreen()">
+                        <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="iframe-container" id="iframe-container">
+                <div class="placeholder-screen" id="placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <p style="font-size: 0.85rem;">Toque em um canal para iniciar</p>
+                </div>
+                
+                <iframe 
+                    id="main-iframe" 
+                    src="" 
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; microphone; camera" 
+                    allowfullscreen
+                    referrerpolicy="no-referrer">
+                </iframe>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function getLogoUrl(id) {
+            const logoMap = {
+                // --- LOGOS ATUALIZADOS ---
+                "globosp": "https://i.ibb.co/Cpm2HM3s/globo.webp",
+                "record": "https://i.ibb.co/DSF58Yz/record.png",
+                "sbt": "https://i.ibb.co/pjRjgW94/sbtsp.png",
+                "redetv": "https://i.ibb.co/hxZhB6hr/redetv.png",
+                "bandsp": "https://i.ibb.co/B5Mq76Nq/bandsp.png",
+                "sportv": "https://i.ibb.co/HDcyFYV2/sportv.png",
+                "sportv2": "https://i.ibb.co/tpWMfSrL/sportv2.png",
+                "sportv3": "https://i.ibb.co/0pF06xMN/sportv3.png",
+                
+                // --- RESTANTE DOS LOGOS ---
+                "tvcultura": "https://i.ibb.co/DffwQptc/tvcultura.png",
+                "band": "https://i.ibb.co/5QgFks5/band.png",
+                "bandnews": "https://i.ibb.co/3YGLYTjt/bandnews.png",
+                "recordnews": "https://i.ibb.co/PfYm668/recordnews.png",
+                "cnnbrasil": "https://i.ibb.co/HfrwqNkH/cnnbrasil.png",
+                "espn": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn2": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn3": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn4": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "premiere7": "https://i.ibb.co/VcxZjS7Y/premiere.png",
+                "combate": "https://i.ibb.co/PZz7kk5r/combate.png",
+                "bandsports": "https://i.ibb.co/FkjYG14t/bandsports.png",
+                "xsports": "https://i.ibb.co/S4nLTTp1/xsports-1.png",
+                "hbo": "https://i.ibb.co/HD9Wn7vy/hbo.png",
+                "hbo2": "https://i.ibb.co/SD7VNyJf/hbo2.png",
+                "hbofamily": "https://i.ibb.co/G442rptb/hbofamily.png",
+                "hboplus": "https://i.ibb.co/twyX4rFH/hboplus.png",
+                "hbosignature": "https://i.ibb.co/Rk1SswRr/hbosignature.png",
+                "max": "https://i.ibb.co/FkJQVyyf/max.png",
+                "telecinepremium": "https://i.ibb.co/xqk1yBy4/tcpremium.png",
+                "telecineaction": "https://i.ibb.co/BHWJ4SHq/tcaction.png",
+                "telecinecult": "https://i.ibb.co/v630bPJn/tccult.png",
+                "telecinefun": "https://i.ibb.co/ymTvmqkW/tcfun.png",
+                "telecinepipoca": "https://i.ibb.co/hJW8BD4g/tcpipoca.png",
+                "telecinetouch": "https://i.ibb.co/mVJr6D8Y/tctouch.png",
+                "space": "https://i.ibb.co/93CVX8VQ/space.png",
+                "cinemax": "https://i.ibb.co/Fqn4DF1x/cinemax.png",
+                "megapix": "https://i.ibb.co/qFV92hxQ/megapix.png",
+                "axn": "https://i.ibb.co/qFnF3sRx/axn.png",
+                "sonychannel": "https://i.ibb.co/3568ND4g/sonychannel.png",
+                "warnerchannel": "https://i.ibb.co/Tq47nZMC/warnertv.png",
+                "comedycentral": "https://i.ibb.co/VW6gwr2C/comedycentral.png",
+                "ae": "https://i.ibb.co/qM59Dt3d/aee.png",
+                "discoverychannel": "https://i.ibb.co/dwykbTv5/discoverychannel.png",
+                "discoveryhh": "https://i.ibb.co/m3N4Fvs/discoveryhh.png",
+                "discoveryscience": "https://i.ibb.co/rfMTWY70/discoveryscience.png",
+                "discoveryturbo": "https://i.ibb.co/sp9G9wSy/discoveryturbo.png",
+                "history": "https://i.ibb.co/20h0Lsyc/history2.png",
+                "history2": "https://i.ibb.co/20h0Lsyc/history2.png",
+                "animalplanet": "https://i.ibb.co/jPZRZgzG/animalplanet.png",
+                "off": "https://i.ibb.co/RpWTy8Bm/canaloff.png",
+                "gnt": "https://i.ibb.co/xt000F8P/gnt.png",
+                "cartoonnetwork": "https://i.ibb.co/mF1wW6mS/cartoonnetwork.png",
+                "cartoonito": "https://i.ibb.co/KxPKb8zG/cartoonito.png",
+                "discoverykids": "https://i.ibb.co/ZpZt0JN3/disneyplus.png",
+                "nickelodeon": "https://i.ibb.co/Hf132WJx/nickelodeon.png",
+                "nickjr": "https://i.ibb.co/HDGMCpZ7/nickjr.png",
+                "disneyplus": "https://i.ibb.co/ZpZt0JN3/disneyplus.png",
+                "paramountplus": "https://i.ibb.co/8L12R946/paramountplus.png"
+            };
+            return logoMap[id] || null;
+        }
+
+        const channelData = [
+            { category: "TV Aberta", items: [
+                { id: "globosp", name: "Globo SP" }, { id: "record", name: "Record TV" },
+                { id: "sbt", name: "SBT" }, { id: "redetv", name: "RedeTV!" },
+                { id: "tvcultura", name: "TV Cultura" }, { id: "band", name: "Band" },
+                { id: "bandsp", name: "Band SP" }
+            ]},
+            { category: "Notícias", items: [
+                { id: "cnnbrasil", name: "CNN Brasil" }, { id: "recordnews", name: "Record News" },
+                { id: "bandnews", name: "Band News" }
+            ]},
+            { category: "Esportes", items: [
+                { id: "espn", name: "ESPN" }, { id: "espn2", name: "ESPN 2" },
+                { id: "espn3", name: "ESPN 3" }, { id: "espn4", name: "ESPN 4" },
+                { id: "sportv", name: "SporTV" }, { id: "sportv2", name: "SporTV 2" },
+                { id: "sportv3", name: "SporTV 3" }, { id: "premiere7", name: "Premiere" },
+                { id: "combate", name: "Combate" }, { id: "bandsports", name: "Band Sports" },
+                { id: "xsports", name: "XSports" }
+            ]},
+            { category: "Filmes e Séries", items: [
+                { id: "hbo", name: "HBO" }, { id: "hbo2", name: "HBO 2" },
+                { id: "hbofamily", name: "HBO Family" }, { id: "hboplus", name: "HBO Plus" },
+                { id: "hbosignature", name: "HBO Signature" }, { id: "max", name: "Max" },
+                { id: "telecinepremium", name: "TC Premium" }, { id: "telecineaction", name: "TC Action" },
+                { id: "telecinecult", name: "TC Cult" }, { id: "telecinefun", name: "TC Fun" },
+                { id: "telecinepipoca", name: "TC Pipoca" }, { id: "telecinetouch", name: "TC Touch" },
+                { id: "space", name: "Space" }, { id: "cinemax", name: "Cinemax" },
+                { id: "megapix", name: "Megapix" }, { id: "axn", name: "AXN" },
+                { id: "sonychannel", name: "Sony" }, { id: "warnerchannel", name: "Warner" },
+                { id: "comedycentral", name: "Comedy" }, { id: "ae", name: "A&E" }
+            ]},
+            { category: "Documentários", items: [
+                { id: "discoverychannel", name: "Discovery" },
+                { id: "discoveryhh", name: "Discovery H&H" },
+                { id: "discoveryscience", name: "Discovery Science" },
+                { id: "discoveryturbo", name: "Discovery Turbo" },
+                { id: "history", name: "History" }, { id: "history2", name: "History 2" },
+                { id: "animalplanet", name: "Animal Planet" }, { id: "off", name: "Canal Off" },
+                { id: "gnt", name: "GNT" }
+            ]},
+            { category: "Infantil", items: [
+                { id: "cartoonnetwork", name: "Cartoon" },
+                { id: "cartoonito", name: "Cartoonito" },
+                { id: "discoverykids", name: "Discovery Kids" },
+                { id: "nickelodeon", name: "Nickelodeon" },
+                { id: "nickjr", name: "Nick Jr." },
+                { id: "disneyplus", name: "Disney+" },
+                { id: "paramountplus", name: "Paramount+" }
+            ]}
+        ];
+
+        const listContainer = document.getElementById('channel-list-container');
+        const mainIframe = document.getElementById('main-iframe');
+        const iframeContainer = document.getElementById('iframe-container');
+        const placeholder = document.getElementById('placeholder');
+        const channelTitle = document.getElementById('current-channel-title');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        
+        let isPlaying = false;
+        const BASE_URL = "https://sinalpublicoetv.vercel.app/?id=";
+
+        function renderChannels() {
+            listContainer.innerHTML = "";
+            let totalRendered = 0;
+
+            channelData.forEach(category => {
+                const catLabel = document.createElement('div');
+                catLabel.className = 'category-label';
+                catLabel.textContent = category.category;
+                listContainer.appendChild(catLabel);
+
+                category.items.forEach(channel => {
+                    const card = document.createElement('button');
+                    card.className = 'channel-card';
+                    card.type = 'button';
+                    card.title = channel.name;
+                    
+                    const logoUrl = getLogoUrl(channel.id);
+                    const initials = channel.name.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase() || 'TV';
+
+                    const logoContainer = document.createElement('div');
+                    logoContainer.className = 'logo-container';
+
+                    const fallback = document.createElement('div');
+                    fallback.className = 'channel-logo-fallback';
+                    fallback.textContent = initials;
+                    logoContainer.appendChild(fallback);
+
+                    if (logoUrl) {
+                        const img = document.createElement('img');
+                        img.src = logoUrl;
+                        img.alt = channel.name;
+                        img.className = 'channel-logo';
+                        
+                        img.onload = function() {
+                            fallback.style.display = 'none';
+                        };
+                        
+                        img.onerror = function() {
+                            this.style.display = 'none';
+                            fallback.style.display = 'flex';
+                        };
+                        
+                        logoContainer.appendChild(img);
+                    }
+
+                    card.appendChild(logoContainer);
+                    
+                    card.addEventListener('click', () => playChannel(channel.id, channel.name, card));
+                    listContainer.appendChild(card);
+                    totalRendered++;
+                });
+            });
+            console.log(`✅ Total de cards renderizados: ${totalRendered}`);
+        }
+
+        function playChannel(channelId, channelName, activeCard) {
+            channelTitle.textContent = channelName;
+            placeholder.style.display = 'none';
+            mainIframe.style.display = 'block';
+            mainIframe.src = `${BASE_URL}${channelId}&t=${Date.now()}`;
+            
+            isPlaying = true;
+            updatePlayPauseIcon();
+
+            document.querySelectorAll('.channel-card').forEach(c => c.classList.remove('active'));
+            activeCard.classList.add('active');
+            
+            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function togglePlayPause() {
+            if (!mainIframe.src || mainIframe.src === window.location.href) return;
+            isPlaying = !isPlaying;
+            updatePlayPauseIcon();
+            try {
+                mainIframe.contentWindow.postMessage({ action: isPlaying ? 'play' : 'pause' }, '*');
+            } catch (e) {
+                console.warn("Controle limitado por CORS.");
+            }
+        }
+
+        function updatePlayPauseIcon() {
+            iconPlay.style.display = isPlaying ? 'none' : 'block';
+            iconPause.style.display = isPlaying ? 'block' : 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                iframeContainer.requestFullscreen().catch(err => console.log(`Erro: ${err.message}`));
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(e => console.log("Orientação bloqueada:", e));
+                }
+            } else {
+                document.exitFullscreen();
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        });
+
+        renderChannels();
+    </script>
 </body>
 </html>
