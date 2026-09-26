@@ -5,19 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Player TV Study</title>
     
-    <!-- Cores do tema para carregamento nativo -->
     <meta name="theme-color" content="#0a1929">
     <meta name="background-color" content="#0a1929">
-    
-    <!-- Configurações iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TV Player">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='40'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
     
-    <!-- O link do manifest será injetado dinamicamente pelo JS abaixo, mas deixamos o ID para referência -->
-    <link rel="manifest" id="pwa_manifest">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='40'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
 
     <style>
         :root {
@@ -192,98 +187,11 @@
         </main>
     </div>
 
-    <!-- 📲 BOTÃO FLUTUANTE DE INSTALAR (Estilo Anote) -->
-    <button id="pwa_btn" onclick="pwaInstall()" style="position:fixed;bottom:24px;right:24px;z-index:9999;background:#4CAF50;color:#fff;border:none;border-radius:50px;padding:14px 24px;font-weight:800;font-size:14px;box-shadow:0 8px 24px rgba(76, 175, 80, 0.4);cursor:pointer;display:none;align-items:center;gap:8px;transition:transform 0.2s;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Baixar App
-    </button>
+    <!-- 📲 APP INSTALÁVEL (Exatamente como no exemplo) -->
+    <button id="pwa_btn" onclick="pwaInstall()" style="position:fixed;bottom:16px;right:16px;z-index:9999;background:#22c55e;color:#052e16;border:none;border-radius:999px;padding:12px 18px;font-weight:800;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.35);cursor:pointer;display:none;">📲 Instalar app</button>
 
     <script>
-        // ==========================================
-        // 1. LÓGICA PWA DINÂMICA (Mantida do exemplo Anote)
-        // ==========================================
-        var pwaDeferred = null;
-        
-        function pwaBase() { 
-            return location.href.substring(0, location.href.lastIndexOf('/') + 1) || './'; 
-        }
-
-        function pwaManifest() {
-            var m = {
-                name: 'Player TV Study',
-                short_name: 'TV Player',
-                start_url: pwaBase(),
-                scope: pwaBase(),
-                display: 'standalone',
-                background_color: '#0a1929',
-                theme_color: '#0a1929',
-                icons: [
-                    { src: pwaBase() + 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-                    { src: pwaBase() + 'icon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'maskable' }, // ← ESSENCIAL para remover a marca
-                    { src: pwaBase() + 'icon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' }
-                ]
-            };
-            var b = new Blob([JSON.stringify(m)], { type: 'application/manifest+json' });
-            var l = document.getElementById('pwa_manifest');
-            if (!l) {
-                l = document.createElement('link');
-                l.id = 'pwa_manifest';
-                l.rel = 'manifest';
-                document.head.appendChild(l);
-            }
-            l.href = URL.createObjectURL(b);
-        }
-        
-        // Executa a criação do manifesto dinâmico
-        setTimeout(pwaManifest, 1000);
-
-        // Eventos de instalação
-        window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            pwaDeferred = e;
-            var btn = document.getElementById('pwa_btn');
-            if (btn) btn.style.display = 'flex';
-        });
-
-        window.addEventListener('appinstalled', function() {
-            var btn = document.getElementById('pwa_btn');
-            if (btn) btn.style.display = 'none';
-            pwaDeferred = null;
-        });
-
-        function pwaInstall() {
-            if (pwaDeferred) {
-                pwaDeferred.prompt();
-                pwaDeferred.userChoice.then(function(c) {
-                    if (c.outcome === 'accepted') {
-                        pwaDeferred = null;
-                        document.getElementById('pwa_btn').style.display = 'none';
-                    }
-                });
-            } else {
-                var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-                alert(ios ? 'Para instalar: toque em Compartilhar e depois em "Adicionar à Tela de Início" 📲' : 'Para instalar: toque no menu ⋮ e depois em "Instalar aplicativo" 📲');
-            }
-        }
-
-        // ==========================================
-        // 2. SERVICE WORKER
-        // ==========================================
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => console.log('SW registrado:', registration.scope))
-                    .catch(error => console.log('Falha no SW:', error));
-            });
-        }
-
-        // ==========================================
-        // 3. DADOS E RENDERIZAÇÃO DO PLAYER
-        // ==========================================
+        /* ===== DADOS DO PLAYER ===== */
         function getLogoUrl(id) {
             const logoMap = {
                 "globosp": "https://i.ibb.co/Cpm2HM3s/globo.webp", "record": "https://i.ibb.co/DSF58Yz/record.png",
@@ -410,6 +318,75 @@
         });
 
         document.addEventListener('contextmenu', event => event.preventDefault());
+
+        /* ===== PWA (Seguindo o exemplo "Anote" a risca) ===== */
+        var pwaDeferred = null;
+        
+        function pwaBase() { 
+            return location.href.substring(0, location.href.lastIndexOf('/') + 1); 
+        }
+
+        function pwaManifest() {
+            var m = {
+                name: 'Player TV Study',
+                short_name: 'TV Player',
+                start_url: pwaBase(),
+                display: 'standalone',
+                background_color: '#0a1929',
+                theme_color: '#0a1929',
+                icons: [
+                    { src: pwaBase() + 'icon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'maskable' },
+                    { src: pwaBase() + 'icon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' }
+                ]
+            };
+            var b = new Blob([JSON.stringify(m)], { type: 'application/manifest+json' });
+            var l = document.getElementById('pwa_manifest');
+            if (!l) {
+                l = document.createElement('link');
+                l.id = 'pwa_manifest';
+                l.rel = 'manifest';
+                document.head.appendChild(l);
+            }
+            l.href = URL.createObjectURL(b);
+        }
+        
+        setTimeout(pwaManifest, 1000);
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            pwaDeferred = e;
+            var btn = document.getElementById('pwa_btn');
+            if (btn) btn.style.display = 'block';
+        });
+
+        window.addEventListener('appinstalled', function() {
+            var btn = document.getElementById('pwa_btn');
+            if (btn) btn.style.display = 'none';
+        });
+
+        function pwaInstall() {
+            if (pwaDeferred) {
+                pwaDeferred.prompt();
+                pwaDeferred.userChoice.then(function(c) {
+                    if (c.outcome === 'accepted') {
+                        pwaDeferred = null;
+                        document.getElementById('pwa_btn').style.display = 'none';
+                    }
+                });
+            } else {
+                var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                alert(ios ? 'Para instalar: toque em Compartilhar e depois em "Adicionar à Tela de Início" 📲' : 'Para instalar: toque no menu ⋮ e depois em "Instalar aplicativo" 📲');
+            }
+        }
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registrado:', registration.scope))
+                    .catch(error => console.log('Falha no SW:', error));
+            });
+        }
 
         renderChannels();
     </script>
