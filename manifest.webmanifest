@@ -1,17 +1,15 @@
 {
-  "name": "TV Player",
-  "short_name": "TV",
-  "description": "Assista seus canais favoritos",
-  "start_url": "./",
+  "name": "tv player",
+  "short_name": "tv",
+  "description": "Peça na mesa ou receba em casa",
+  "start_url": "./clienteselect.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0a1929",
-  "theme_color": "#0a1929",
+  "background_color": "#f5f5f4",
+  "theme_color": "#ea580c",
   "icons": [
-    {
-     "src": "icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "./icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
