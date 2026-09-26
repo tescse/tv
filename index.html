@@ -7,359 +7,75 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="TV Player"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <title>TV Player</title>
 <link rel="manifest" href="manifest.json"/>
-<link rel="icon" href="icon.svg" type="image/svg+xml"/>
-<link rel="apple-touch-icon" href="icon.svg"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-192.png"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#0a0a0a;
-  --card:#1a1a1a;
-  --card2:#252525;
-  --accent:#4CAF50;
-  --text:#fff;
-  --muted:#888;
-  --border:#2a2a2a;
-  --radius:14px;
-}
+:root{--bg:#0a0a0a;--card:#1a1a1a;--card2:#252525;--accent:#4CAF50;--text:#fff;--muted:#888;--border:#2a2a2a;--radius:14px}
 html,body{height:100%;overflow:hidden}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  user-select:none;
-  -webkit-user-select:none;
-}
-
-/* ===== LAYOUT PRINCIPAL ===== */
-.app{
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-  height:100dvh;
-  max-width:600px;
-  margin:0 auto;
-  position:relative;
-  background:#000;
-}
-
-/* ===== PLAYER ===== */
-.player-wrap{
-  position:relative;
-  background:#000;
-  aspect-ratio:16/9;
-  width:100%;
-  flex-shrink:0;
-  overflow:hidden;
-}
-.player-wrap.fullscreen{
-  position:fixed;
-  inset:0;
-  aspect-ratio:auto;
-  z-index:100;
-  max-width:none;
-}
-.iframe-container{
-  width:100%;
-  height:100%;
-  position:relative;
-}
-#main-iframe{
-  width:100%;
-  height:100%;
-  border:none;
-  display:none;
-}
-.placeholder{
-  position:absolute;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  color:var(--muted);
-  gap:12px;
-}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);user-select:none;-webkit-user-select:none}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:600px;margin:0 auto;position:relative;background:#000}
+.player-wrap{position:relative;background:#000;aspect-ratio:16/9;width:100%;flex-shrink:0;overflow:hidden}
+.player-wrap.fullscreen{position:fixed;inset:0;aspect-ratio:auto;z-index:100;max-width:none}
+.iframe-container{width:100%;height:100%;position:relative}
+#main-iframe{width:100%;height:100%;border:none;display:none}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px}
 .placeholder svg{width:64px;height:64px;stroke:#444}
 .placeholder p{font-size:13px}
-
-.player-controls{
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  padding:12px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  z-index:10;
-  opacity:1;
-  transition:opacity .3s;
-}
+.player-controls{position:absolute;top:0;left:0;right:0;padding:12px;padding-top:calc(12px + env(safe-area-inset-top));background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);display:flex;justify-content:space-between;align-items:center;z-index:10;opacity:1;transition:opacity .3s}
 .player-wrap.hide-controls .player-controls{opacity:0}
-
-.channel-title{
-  color:#fff;
-  font-weight:700;
-  font-size:14px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  max-width:60%;
-  overflow:hidden;
-}
-.channel-title .live{
-  background:var(--accent);
-  color:#000;
-  padding:2px 8px;
-  border-radius:4px;
-  font-size:10px;
-  font-weight:800;
-}
+.channel-title{color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.channel-title .live{background:var(--accent);color:#000;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;flex-shrink:0}
 .controls{display:flex;gap:6px}
-.ctrl-btn{
-  width:36px;
-  height:36px;
-  border-radius:8px;
-  background:rgba(0,0,0,.6);
-  border:1px solid rgba(255,255,255,.1);
-  color:#fff;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+.ctrl-btn{width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .ctrl-btn:active{background:var(--accent);border-color:var(--accent)}
-.ctrl-btn svg{width:18px;height:18px;fill:currentColor}
-
-/* ===== CONTEÚDO ABAIXO ===== */
-.content{
-  flex:1;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  background:var(--bg);
-}
-
-/* Tabs de navegação */
-.tabs{
-  display:flex;
-  background:var(--card);
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-}
-.tab{
-  flex:1;
-  padding:12px;
-  text-align:center;
-  font-size:13px;
-  font-weight:700;
-  color:var(--muted);
-  cursor:pointer;
-  border-bottom:2px solid transparent;
-  transition:all .2s;
-}
+.ctrl-btn svg{width:20px;height:20px;fill:currentColor;stroke:currentColor}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg)}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-
-/* Busca */
-.search-wrap{
-  padding:10px 12px;
-  background:var(--bg);
-  flex-shrink:0;
-}
-.search-input{
-  width:100%;
-  padding:10px 14px;
-  background:var(--card2);
-  border:1px solid var(--border);
-  border-radius:10px;
-  color:var(--text);
-  font-size:14px;
-  outline:none;
-}
+.search-wrap{padding:10px 12px;background:var(--bg);flex-shrink:0}
+.search-input{width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
 .search-input:focus{border-color:var(--accent)}
-
-/* Lista de canais */
-.channel-list{
-  flex:1;
-  overflow-y:auto;
-  padding:0 12px 90px;
-}
+.channel-list{flex:1;overflow-y:auto;padding:0 12px 90px}
 .channel-list::-webkit-scrollbar{width:4px}
 .channel-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-.category{
-  margin-bottom:16px;
-}
-.category-title{
-  font-size:11px;
-  font-weight:800;
-  text-transform:uppercase;
-  color:var(--accent);
-  letter-spacing:.5px;
-  padding:8px 4px;
-  margin-bottom:8px;
-}
-.channels-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-}
-.channel-card{
-  aspect-ratio:1;
-  background:var(--card);
-  border:2px solid var(--border);
-  border-radius:10px;
-  position:relative;
-  cursor:pointer;
-  overflow:hidden;
-  transition:all .15s;
-}
+.category{margin-bottom:16px}
+.category-title{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--accent);letter-spacing:.5px;padding:8px 4px;margin-bottom:8px}
+.channels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.channel-card{aspect-ratio:1;background:var(--card);border:2px solid var(--border);border-radius:10px;position:relative;cursor:pointer;overflow:hidden;transition:all .15s}
 .channel-card:active{transform:scale(.97)}
-.channel-card.active{
-  border-color:var(--accent);
-  box-shadow:0 0 0 2px rgba(76,175,80,.3);
-}
-.channel-card .logo-wrap{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:10px;
-}
-.channel-card img{
-  max-width:100%;
-  max-height:100%;
-  object-fit:contain;
-}
-.channel-card .fallback{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:14px;
-  font-weight:800;
-  color:#fff;
-  background:linear-gradient(135deg,#2a4a6b,#1a3a5c);
-  border-radius:8px;
-}
-.channel-card .fav-btn{
-  position:absolute;
-  top:4px;
-  right:4px;
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  background:rgba(0,0,0,.6);
-  border:none;
-  color:#fff;
-  font-size:12px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+.channel-card.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(76,175,80,.3)}
+.channel-card .logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:10px}
+.channel-card img{max-width:100%;max-height:100%;object-fit:contain}
+.channel-card .fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#2a4a6b,#1a3a5c);border-radius:8px}
+.channel-card .fav-btn{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .channel-card .fav-btn.fav{color:#ff4757}
-
-.empty-state{
-  text-align:center;
-  padding:40px 20px;
-  color:var(--muted);
-  font-size:14px;
-}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
 .empty-state .big{font-size:40px;margin-bottom:10px;display:block}
-
-/* Bottom nav */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:100%;
-  max-width:600px;
-  background:var(--card);
-  border-top:1px solid var(--border);
-  display:flex;
-  z-index:50;
-  padding-bottom:env(safe-area-inset-bottom);
-}
-.nav-item{
-  flex:1;
-  text-align:center;
-  padding:10px 0 8px;
-  font-size:10px;
-  color:var(--muted);
-  cursor:pointer;
-  font-weight:700;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:2px;
-}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;text-align:center;padding:10px 0 8px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
 .nav-item .ico{font-size:20px}
 .nav-item.active{color:var(--accent)}
-
-/* Toast */
-.toast{
-  position:fixed;
-  top:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:var(--accent);
-  color:#000;
-  padding:10px 20px;
-  border-radius:20px;
-  font-size:13px;
-  font-weight:700;
-  z-index:200;
-  opacity:0;
-  transition:all .3s;
-  pointer-events:none;
-}
+.toast{position:fixed;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:200;opacity:0;transition:all .3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(4px)}
-
-/* Install button */
-.install-banner{
-  position:fixed;
-  bottom:70px;
-  left:50%;
-  transform:translateX(-50%);
-  background:var(--accent);
-  color:#000;
-  padding:10px 20px;
-  border-radius:20px;
-  font-size:13px;
-  font-weight:700;
-  cursor:pointer;
-  z-index:40;
-  display:none;
-  box-shadow:0 4px 12px rgba(76,175,80,.4);
-}
-.install-banner.show{display:block;animation:up .3s ease}
+.install-banner{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;z-index:60;display:none;box-shadow:0 4px 16px rgba(76,175,80,.5);gap:8px;align-items:center;white-space:nowrap}
+.install-banner.show{display:flex;animation:up .3s ease}
 @keyframes up{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
-
-/* Fullscreen */
 .player-wrap.fullscreen + .content,
-.player-wrap.fullscreen ~ .bottom-nav{display:none}
-
-/* Landscape fullscreen */
-@media (orientation:landscape) and (max-height:500px){
-  .player-wrap.fullscreen{height:100vh}
-}
-
-@media (min-width:601px){
-  .app{border-left:1px solid var(--border);border-right:1px solid var(--border)}
-}
+.player-wrap.fullscreen ~ .bottom-nav,
+.player-wrap.fullscreen ~ .install-banner{display:none}
+@media (orientation:landscape) and (max-height:500px){.player-wrap.fullscreen{height:100vh}}
+@media (min-width:601px){.app{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
 </style>
 </head>
 <body>
 
 <div class="app">
-  <!-- PLAYER -->
   <div class="player-wrap" id="player-wrap">
     <div class="iframe-container">
       <div class="placeholder" id="placeholder">
@@ -377,16 +93,15 @@ body{
       </div>
       <div class="controls">
         <button class="ctrl-btn" id="fav-current" onclick="toggleFavCurrent()" title="Favoritar">
-          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
         <button class="ctrl-btn" onclick="toggleFullscreen()">
-          <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- CONTEÚDO -->
   <div class="content">
     <div class="tabs">
       <div class="tab active" data-tab="all" onclick="switchTab('all')">📺 Todos</div>
@@ -399,20 +114,10 @@ body{
     <div class="channel-list" id="channel-list"></div>
   </div>
 
-  <!-- BOTTOM NAV -->
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="goHome()">
-      <span class="ico">📺</span>
-      <span>TV</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('favorites')">
-      <span class="ico">❤️</span>
-      <span>Favoritos</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('recent')">
-      <span class="ico">🕐</span>
-      <span>Recentes</span>
-    </div>
+    <div class="nav-item active" onclick="goHome()"><span class="ico">📺</span><span>TV</span></div>
+    <div class="nav-item" onclick="switchTab('favorites')"><span class="ico">❤️</span><span>Favoritos</span></div>
+    <div class="nav-item" onclick="switchTab('recent')"><span class="ico">🕐</span><span>Recentes</span></div>
   </div>
 </div>
 
@@ -420,16 +125,31 @@ body{
 <div class="install-banner" id="install-banner" onclick="installApp()">📲 Instalar no celular</div>
 
 <script>
+// ===== SERVICE WORKER (OBRIGATÓRIO PARA PWA) =====
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .then(r=>console.log('✅ SW registrado:',r.scope))
+      .catch(e=>console.warn('❌ SW falhou:',e));
+  });
+}
+
 // ===== PWA INSTALL =====
 let deferredPrompt;
 const installBanner=document.getElementById('install-banner');
+
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredPrompt=e;
   installBanner.classList.add('show');
+  console.log('✅ App instalável detectado');
 });
+
 async function installApp(){
-  if(!deferredPrompt)return;
+  if(!deferredPrompt){
+    toast('Abra no Chrome e use o menu ⋮ → "Adicionar à tela inicial"');
+    return;
+  }
   deferredPrompt.prompt();
   const{outcome}=await deferredPrompt.userChoice;
   if(outcome==='accepted'){
@@ -438,12 +158,45 @@ async function installApp(){
   }
   deferredPrompt=null;
 }
+
 window.addEventListener('appinstalled',()=>{
   installBanner.classList.remove('show');
   toast('Instalado com sucesso! 🎉');
 });
 
-// ===== LOGOS =====
+// Gerar ícones PNG dinamicamente (iOS + fallback)
+function generateIcon(){
+  const sizes=[192,180,152,120];
+  sizes.forEach(size=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=size;canvas.height=size;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#0a1929';
+    ctx.fillRect(0,0,size,size);
+    ctx.fillStyle='#1a3a5c';
+    const rx=size*0.15;
+    ctx.beginPath();
+    ctx.roundRect(size*0.15,size*0.27,size*0.7,size*0.43,rx);
+    ctx.fill();
+    ctx.fillStyle='#4CAF50';
+    ctx.beginPath();
+    ctx.moveTo(size*0.4,size*0.38);
+    ctx.lineTo(size*0.4,size*0.62);
+    ctx.lineTo(size*0.63,size*0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle='#4CAF50';
+    ctx.fillRect(size*0.35,size*0.75,size*0.3,size*0.025);
+    const link=document.createElement('link');
+    link.rel='apple-touch-icon';
+    link.sizes=size+'x'+size;
+    link.href=canvas.toDataURL('image/png');
+    document.head.appendChild(link);
+  });
+}
+try{generateIcon()}catch(e){}
+
+// ===== LOGOS DOS CANAIS =====
 const logoMap={
   globosp:"https://i.ibb.co/Cpm2HM3s/globo.webp",
   record:"https://i.ibb.co/DSF58Yz/record.png",
@@ -503,64 +256,25 @@ const logoMap={
   paramountplus:"https://i.ibb.co/8L12R946/paramountplus.png"
 };
 
-// ===== DADOS =====
 const channelData=[
-  {category:"TV Aberta",items:[
-    {id:"globosp",name:"Globo SP"},{id:"record",name:"Record TV"},
-    {id:"sbt",name:"SBT"},{id:"redetv",name:"RedeTV!"},
-    {id:"tvcultura",name:"TV Cultura"},{id:"band",name:"Band"},{id:"bandsp",name:"Band SP"}
-  ]},
-  {category:"Notícias",items:[
-    {id:"cnnbrasil",name:"CNN Brasil"},{id:"recordnews",name:"Record News"},{id:"bandnews",name:"Band News"}
-  ]},
-  {category:"Esportes",items:[
-    {id:"espn",name:"ESPN"},{id:"espn2",name:"ESPN 2"},{id:"espn3",name:"ESPN 3"},{id:"espn4",name:"ESPN 4"},
-    {id:"sportv",name:"SporTV"},{id:"sportv2",name:"SporTV 2"},{id:"sportv3",name:"SporTV 3"},
-    {id:"premiere7",name:"Premiere"},{id:"combate",name:"Combate"},
-    {id:"bandsports",name:"Band Sports"},{id:"xsports",name:"XSports"}
-  ]},
-  {category:"Filmes e Séries",items:[
-    {id:"hbo",name:"HBO"},{id:"hbo2",name:"HBO 2"},{id:"hbofamily",name:"HBO Family"},
-    {id:"hboplus",name:"HBO Plus"},{id:"hbosignature",name:"HBO Signature"},{id:"max",name:"Max"},
-    {id:"telecinepremium",name:"TC Premium"},{id:"telecineaction",name:"TC Action"},
-    {id:"telecinecult",name:"TC Cult"},{id:"telecinefun",name:"TC Fun"},
-    {id:"telecinepipoca",name:"TC Pipoca"},{id:"space",name:"Space"},
-    {id:"cinemax",name:"Cinemax"},{id:"megapix",name:"Megapix"},{id:"axn",name:"AXN"},
-    {id:"sonychannel",name:"Sony"},{id:"warnerchannel",name:"Warner"},
-    {id:"comedycentral",name:"Comedy"},{id:"ae",name:"A&E"}
-  ]},
-  {category:"Documentários",items:[
-    {id:"discoverychannel",name:"Discovery"},{id:"discoveryhh",name:"Discovery H&H"},
-    {id:"discoveryscience",name:"Discovery Science"},{id:"discoveryturbo",name:"Discovery Turbo"},
-    {id:"history",name:"History"},{id:"history2",name:"History 2"},
-    {id:"animalplanet",name:"Animal Planet"},{id:"off",name:"Canal Off"},{id:"gnt",name:"GNT"}
-  ]},
-  {category:"Infantil",items:[
-    {id:"cartoonnetwork",name:"Cartoon"},{id:"cartoonito",name:"Cartoonito"},
-    {id:"discoverykids",name:"Discovery Kids"},{id:"nickelodeon",name:"Nickelodeon"},
-    {id:"nickjr",name:"Nick Jr."},{id:"disneyplus",name:"Disney+"},{id:"paramountplus",name:"Paramount+"}
-  ]}
+  {category:"TV Aberta",items:[{id:"globosp",name:"Globo SP"},{id:"record",name:"Record TV"},{id:"sbt",name:"SBT"},{id:"redetv",name:"RedeTV!"},{id:"tvcultura",name:"TV Cultura"},{id:"band",name:"Band"},{id:"bandsp",name:"Band SP"}]},
+  {category:"Notícias",items:[{id:"cnnbrasil",name:"CNN Brasil"},{id:"recordnews",name:"Record News"},{id:"bandnews",name:"Band News"}]},
+  {category:"Esportes",items:[{id:"espn",name:"ESPN"},{id:"espn2",name:"ESPN 2"},{id:"espn3",name:"ESPN 3"},{id:"espn4",name:"ESPN 4"},{id:"sportv",name:"SporTV"},{id:"sportv2",name:"SporTV 2"},{id:"sportv3",name:"SporTV 3"},{id:"premiere7",name:"Premiere"},{id:"combate",name:"Combate"},{id:"bandsports",name:"Band Sports"},{id:"xsports",name:"XSports"}]},
+  {category:"Filmes e Séries",items:[{id:"hbo",name:"HBO"},{id:"hbo2",name:"HBO 2"},{id:"hbofamily",name:"HBO Family"},{id:"hboplus",name:"HBO Plus"},{id:"hbosignature",name:"HBO Signature"},{id:"max",name:"Max"},{id:"telecinepremium",name:"TC Premium"},{id:"telecineaction",name:"TC Action"},{id:"telecinecult",name:"TC Cult"},{id:"telecinefun",name:"TC Fun"},{id:"telecinepipoca",name:"TC Pipoca"},{id:"space",name:"Space"},{id:"cinemax",name:"Cinemax"},{id:"megapix",name:"Megapix"},{id:"axn",name:"AXN"},{id:"sonychannel",name:"Sony"},{id:"warnerchannel",name:"Warner"},{id:"comedycentral",name:"Comedy"},{id:"ae",name:"A&E"}]},
+  {category:"Documentários",items:[{id:"discoverychannel",name:"Discovery"},{id:"discoveryhh",name:"Discovery H&H"},{id:"discoveryscience",name:"Discovery Science"},{id:"discoveryturbo",name:"Discovery Turbo"},{id:"history",name:"History"},{id:"history2",name:"History 2"},{id:"animalplanet",name:"Animal Planet"},{id:"off",name:"Canal Off"},{id:"gnt",name:"GNT"}]},
+  {category:"Infantil",items:[{id:"cartoonnetwork",name:"Cartoon"},{id:"cartoonito",name:"Cartoonito"},{id:"discoverykids",name:"Discovery Kids"},{id:"nickelodeon",name:"Nickelodeon"},{id:"nickjr",name:"Nick Jr."},{id:"disneyplus",name:"Disney+"},{id:"paramountplus",name:"Paramount+"}]}
 ];
 
-// ===== ESTADO =====
 const BASE_URL="https://sinalpublicoetv.vercel.app/?id=";
-let currentTab='all';
-let currentChannel=null;
+let currentTab='all',currentChannel=null;
 let favorites=JSON.parse(localStorage.getItem('tv_favorites')||'[]');
 let recent=JSON.parse(localStorage.getItem('tv_recent')||'[]');
 
-// ===== ELEMENTOS =====
 const $=id=>document.getElementById(id);
-const playerWrap=$('player-wrap');
-const mainIframe=$('main-iframe');
-const placeholder=$('placeholder');
-const channelTitle=$('channel-title');
-const liveBadge=$('live-badge');
-const channelList=$('channel-list');
-const searchInput=$('search');
-const toastEl=$('toast');
+const playerWrap=$('player-wrap'),mainIframe=$('main-iframe'),placeholder=$('placeholder'),
+      channelTitle=$('channel-title'),liveBadge=$('live-badge'),channelList=$('channel-list'),
+      searchInput=$('search'),toastEl=$('toast');
 
-// ===== TOAST =====
 function toast(msg){
   toastEl.textContent=msg;
   toastEl.classList.add('show');
@@ -568,205 +282,64 @@ function toast(msg){
   toastEl._tm=setTimeout(()=>toastEl.classList.remove('show'),2000);
 }
 
-// ===== RENDER =====
 function renderChannels(){
   const q=searchInput.value.toLowerCase().trim();
-  let html='';
-  let total=0;
-
+  let html='',total=0;
   if(currentTab==='favorites'){
-    const favChannels=[];
-    channelData.forEach(cat=>{
-      cat.items.forEach(ch=>{
-        if(favorites.includes(ch.id)){
-          if(!q||ch.name.toLowerCase().includes(q)){
-            favChannels.push({...ch,category:cat.category});
-          }
-        }
-      });
-    });
-    if(!favChannels.length){
-      channelList.innerHTML='<div class="empty-state"><span class="big">❤️</span>Nenhum favorito ainda.<br>Toque no ❤ em qualquer canal!</div>';
-      return;
-    }
-    html=renderGrid(favChannels,'Favoritos');
-    total=favChannels.length;
+    const favs=[];
+    channelData.forEach(cat=>cat.items.forEach(ch=>{if(favorites.includes(ch.id)&&(!q||ch.name.toLowerCase().includes(q)))favs.push({...ch,category:cat.category})}));
+    if(!favs.length){channelList.innerHTML='<div class="empty-state"><span class="big">❤️</span>Nenhum favorito ainda.<br>Toque no ❤ em qualquer canal!</div>';return}
+    html=renderGrid(favs,'Favoritos');total=favs.length;
   }else if(currentTab==='recent'){
-    const recentChannels=[];
-    recent.forEach(id=>{
-      channelData.forEach(cat=>{
-        const ch=cat.items.find(c=>c.id===id);
-        if(ch&&!q||ch&&ch.name.toLowerCase().includes(q)){
-          recentChannels.push({...ch,category:cat.category});
-        }
-      });
-    });
-    if(!recentChannels.length){
-      channelList.innerHTML='<div class="empty-state"><span class="big">🕐</span>Nenhum canal assistido ainda.</div>';
-      return;
-    }
-    html=renderGrid(recentChannels,'Assistidos recentemente');
-    total=recentChannels.length;
+    const recs=[];
+    recent.forEach(id=>{channelData.forEach(cat=>{const ch=cat.items.find(c=>c.id===id);if(ch&&(!q||ch.name.toLowerCase().includes(q)))recs.push({...ch,category:cat.category})})});
+    if(!recs.length){channelList.innerHTML='<div class="empty-state"><span class="big">🕐</span>Nenhum canal assistido ainda.</div>';return}
+    html=renderGrid(recs,'Assistidos recentemente');total=recs.length;
   }else{
     channelData.forEach(cat=>{
-      const filtered=cat.items.filter(ch=>!q||ch.name.toLowerCase().includes(q));
-      if(filtered.length){
-        html+=`<div class="category"><div class="category-title">${cat.category}</div><div class="channels-grid">${filtered.map(ch=>renderCard(ch)).join('')}</div></div>`;
-        total+=filtered.length;
-      }
+      const f=cat.items.filter(ch=>!q||ch.name.toLowerCase().includes(q));
+      if(f.length){html+=`<div class="category"><div class="category-title">${cat.category}</div><div class="channels-grid">${f.map(ch=>renderCard(ch)).join('')}</div></div>`;total+=f.length}
     });
   }
-
-  if(!total){
-    channelList.innerHTML='<div class="empty-state"><span class="big">🔍</span>Nenhum canal encontrado.</div>';
-  }else{
-    channelList.innerHTML=html;
-  }
+  if(!total)channelList.innerHTML='<div class="empty-state"><span class="big">🔍</span>Nenhum canal encontrado.</div>';
+  else channelList.innerHTML=html;
 }
-
-function renderGrid(channels,title){
-  return`<div class="category"><div class="category-title">${title}</div><div class="channels-grid">${channels.map(ch=>renderCard(ch)).join('')}</div></div>`;
-}
-
+function renderGrid(ch,title){return`<div class="category"><div class="category-title">${title}</div><div class="channels-grid">${ch.map(c=>renderCard(c)).join('')}</div></div>`}
 function renderCard(ch){
-  const logoUrl=logoMap[ch.id];
-  const initials=ch.name.replace(/[^a-zA-Z]/g,'').substring(0,2).toUpperCase()||'TV';
+  const logo=logoMap[ch.id];
+  const ini=ch.name.replace(/[^a-zA-Z]/g,'').substring(0,2).toUpperCase()||'TV';
   const isFav=favorites.includes(ch.id);
-  const isActive=currentChannel&&currentChannel.id===ch.id;
-  return`
-    <div class="channel-card ${isActive?'active':''}" onclick="playChannel('${ch.id}','${ch.name.replace(/'/g,"\\'")}')">
-      <button class="fav-btn ${isFav?'fav':''}" onclick="event.stopPropagation();toggleFav('${ch.id}')" type="button">
-        ${isFav?'❤️':'🤍'}
-      </button>
-      <div class="logo-wrap">
-        ${logoUrl?`<img src="${logoUrl}" alt="${ch.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fallback" style="display:none">${initials}</div>`:`<div class="fallback">${initials}</div>`}
-      </div>
-    </div>
-  `;
+  const isAct=currentChannel&&currentChannel.id===ch.id;
+  return`<div class="channel-card ${isAct?'active':''}" onclick="playChannel('${ch.id}','${ch.name.replace(/'/g,"\\'")}')"><button class="fav-btn ${isFav?'fav':''}" onclick="event.stopPropagation();toggleFav('${ch.id}')" type="button">${isFav?'❤️':'🤍'}</button><div class="logo-wrap">${logo?`<img src="${logo}" alt="${ch.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fallback" style="display:none">${ini}</div>`:`<div class="fallback">${ini}</div>`}</div></div>`;
 }
-
-// ===== AÇÕES =====
-function switchTab(tab){
-  currentTab=tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
-  searchInput.value='';
-  renderChannels();
-}
-
-function goHome(){
-  currentTab='all';
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='all'));
-  searchInput.value='';
-  renderChannels();
-}
-
+function switchTab(t){currentTab=t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));searchInput.value='';renderChannels()}
+function goHome(){currentTab='all';document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='all'));searchInput.value='';renderChannels()}
 function playChannel(id,name){
-  channelTitle.textContent=name;
-  placeholder.style.display='none';
-  mainIframe.style.display='block';
-  mainIframe.src=`${BASE_URL}${id}&t=${Date.now()}`;
-  liveBadge.style.display='inline-block';
+  channelTitle.textContent=name;placeholder.style.display='none';mainIframe.style.display='block';
+  mainIframe.src=`${BASE_URL}${id}&t=${Date.now()}`;liveBadge.style.display='inline-block';
   currentChannel={id,name};
-
-  // Salvar em recentes
-  recent=recent.filter(r=>r!==id);
-  recent.unshift(id);
-  recent=recent.slice(0,20);
+  recent=recent.filter(r=>r!==id);recent.unshift(id);recent=recent.slice(0,20);
   localStorage.setItem('tv_recent',JSON.stringify(recent));
-
-  // Atualizar botão fav
-  updateFavBtn();
-
-  // Toast
-  toast(`▶ ${name}`);
-
-  // Atualizar lista para mostrar ativo
-  renderChannels();
+  updateFavBtn();toast(`▶ ${name}`);renderChannels();
 }
-
 function toggleFav(id){
-  if(favorites.includes(id)){
-    favorites=favorites.filter(f=>f!==id);
-    toast('Removido dos favoritos');
-  }else{
-    favorites.push(id);
-    toast('Adicionado aos favoritos ❤️');
-  }
-  localStorage.setItem('tv_favorites',JSON.stringify(favorites));
-  updateFavBtn();
-  renderChannels();
+  if(favorites.includes(id)){favorites=favorites.filter(f=>f!==id);toast('Removido dos favoritos')}
+  else{favorites.push(id);toast('Adicionado aos favoritos ❤️')}
+  localStorage.setItem('tv_favorites',JSON.stringify(favorites));updateFavBtn();renderChannels();
 }
-
-function toggleFavCurrent(){
-  if(!currentChannel)return toast('Selecione um canal primeiro');
-  toggleFav(currentChannel.id);
-}
-
-function updateFavBtn(){
-  const btn=$('fav-current');
-  if(currentChannel&&favorites.includes(currentChannel.id)){
-    btn.style.color='#ff4757';
-  }else{
-    btn.style.color='#fff';
-  }
-}
-
+function toggleFavCurrent(){if(!currentChannel)return toast('Selecione um canal');toggleFav(currentChannel.id)}
+function updateFavBtn(){const b=$('fav-current');b.style.color=currentChannel&&favorites.includes(currentChannel.id)?'#ff4757':'#fff'}
 function toggleFullscreen(){
-  if(!document.fullscreenElement){
-    playerWrap.requestFullscreen().catch(()=>{});
-    playerWrap.classList.add('fullscreen');
-    if(screen.orientation&&screen.orientation.lock){
-      screen.orientation.lock('landscape').catch(()=>{});
-    }
-  }else{
-    document.exitFullscreen();
-    playerWrap.classList.remove('fullscreen');
-    if(screen.orientation&&screen.orientation.unlock){
-      screen.orientation.unlock();
-    }
-  }
+  if(!document.fullscreenElement){playerWrap.requestFullscreen().catch(()=>{});playerWrap.classList.add('fullscreen');if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{})}
+  else{document.exitFullscreen();playerWrap.classList.remove('fullscreen');if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock()}
 }
-
-document.addEventListener('fullscreenchange',()=>{
-  if(!document.fullscreenElement){
-    playerWrap.classList.remove('fullscreen');
-    if(screen.orientation&&screen.orientation.unlock){
-      screen.orientation.unlock();
-    }
-  }
-});
-
-// Busca
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){playerWrap.classList.remove('fullscreen');if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock()}});
 searchInput.addEventListener('input',renderChannels);
-
-// Auto-hide controls
-let hideTimer;
-playerWrap.addEventListener('click',()=>{
-  playerWrap.classList.remove('hide-controls');
-  clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>playerWrap.classList.add('hide-controls'),3000);
-});
-
-// Init
+let hideTimer;playerWrap.addEventListener('click',()=>{playerWrap.classList.remove('hide-controls');clearTimeout(hideTimer);hideTimer=setTimeout(()=>playerWrap.classList.add('hide-controls'),3000)});
 renderChannels();
-
-// Restaurar último canal
-const lastChannel=localStorage.getItem('tv_last_channel');
-if(lastChannel){
-  try{
-    const{id,name}=JSON.parse(lastChannel);
-    if(confirm(`Continuar assistindo ${name}?`)){
-      playChannel(id,name);
-    }
-  }catch(e){}
-}
-
-// Salvar último canal ao sair
-window.addEventListener('beforeunload',()=>{
-  if(currentChannel){
-    localStorage.setItem('tv_last_channel',JSON.stringify(currentChannel));
-  }
-});
+const last=localStorage.getItem('tv_last_channel');
+if(last){try{const{id,name}=JSON.parse(last);if(confirm(`Continuar assistindo ${name}?`))playChannel(id,name)}catch(e){}}
+window.addEventListener('beforeunload',()=>{if(currentChannel)localStorage.setItem('tv_last_channel',JSON.stringify(currentChannel))});
 </script>
 </body>
 </html>
