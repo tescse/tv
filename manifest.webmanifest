@@ -1,8 +1,8 @@
 {
   "name": "tv player",
   "short_name": "tv",
-  "description": "Peça na mesa ou receba em casa",
-  "start_url": "./clienteselect.html",
+  "description": "assiste seus canais favoritos onde estiver",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f5f4",
