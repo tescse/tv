@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Player TV Study</title>
     
-    <!-- CONFIGURAÇÕES PWA (ADICIONADO) -->
-    <link rel="manifest" href="manifest.json">
+    <!-- ✅ PWA CONFIGS -->
     <meta name="theme-color" content="#0a1929">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TV Player">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='30'/><text x='96' y='125' font-size='90' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230a1929' rx='60'/><text x='256' y='320' font-size='220' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
 
     <style>
         :root {
@@ -22,6 +21,10 @@
             --text-main: #333333;
             --text-muted: #888888;
             --border: #e0e0e0;
+            --bar-bg: #0f2a47; /* 🔵 Azul padrão da barra */
+            --bar-border: #1a406b;
+            --btn-bg: #0f2a47; /* ✅ EXATAMENTE a mesma cor da barra */
+            --btn-hover: #1a406b; /* Sutilmente mais claro no hover */
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,9 +35,15 @@
             color: var(--text-main);
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .app-layout { display: flex; height: 100vh; }
+        .app-layout { 
+            display: flex; 
+            flex: 1;
+            min-height: 0;
+        }
 
         .sidebar {
             width: 380px;
@@ -180,7 +189,47 @@
         .control-btn:hover { background: var(--accent); border-color: var(--accent); }
         .control-btn svg { width: 16px; height: 16px; fill: currentColor; }
 
-        .iframe-container { flex: 1; position: relative; width: 100%; height: 100%; background: #000; }
+        /* ✅ BARRA INFERIOR */
+        .bottom-bar {
+            background-color: var(--bar-bg);
+            border-top: 1px solid var(--bar-border);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ✅ BOTÃO = MESMA COR DA BARRA */
+        #pwa_btn {
+            background: var(--btn-bg); /* Mesmo valor exato */
+            color: #ffffff;
+            border: 1px solid var(--bar-border);
+            border-radius: 999px;
+            padding: 10px 24px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        #pwa_btn:hover {
+            background: var(--btn-hover); /* Sutil destaque */
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        #pwa_btn:active {
+            transform: scale(0.97);
+        }
+
+        .iframe-container { 
+            flex: 1; 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            min-height: 0;
+        }
         #main-iframe { width: 100%; height: 100%; border: none; display: none; }
 
         .placeholder-screen {
@@ -201,12 +250,15 @@
             justify-content: center; 
         }
         .iframe-container:fullscreen #main-iframe { width: 100%; height: 100%; display: block; }
+        .iframe-container:fullscreen ~ .bottom-bar { display: none; }
 
         @media (max-width: 768px) {
             .app-layout { flex-direction: column; }
             .sidebar { width: 100%; height: 50%; order: 2; }
             .player-section { height: 50%; order: 1; }
             .channel-list { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+            .bottom-bar { padding: 10px 16px; }
+            #pwa_btn { width: 100%; justify-content: center; }
         }
 
         @media (max-width: 400px) {
@@ -231,11 +283,6 @@
                     <span id="current-channel-title">Selecione um canal</span>
                 </div>
                 <div class="controls">
-                    <!-- BOTÃO DE INSTALAR (ADICIONADO) -->
-                    <button class="control-btn" id="install-btn" title="Instalar App" style="display: none;">
-                        <svg viewBox="0 0 24 24"><path d="M12 2L12 14M12 14L7 9M12 14L17 9M5 20L19 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                    </button>
-
                     <button class="control-btn" id="play-pause-btn" title="Play/Pause" onclick="togglePlayPause()">
                         <svg id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         <svg id="icon-pause" viewBox="0 0 24 24" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
@@ -265,29 +312,76 @@
         </main>
     </div>
 
+    <!-- ✅ BARRA + BOTÃO MESMA COR -->
+    <nav class="bottom-bar">
+        <button id="pwa_btn" onclick="pwaInstall()">📲 Instalar App</button>
+    </nav>
+
     <script>
-        // --- LÓGICA DE INSTALAÇÃO PWA (ADICIONADO) ---
-        let deferredPrompt;
-        const installBtn = document.getElementById('install-btn');
+        // ✅ MÉTODO PWA — IDÊNTICO
+        var pwaDeferred = null;
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'flex'; // Mostra o botão apenas se o navegador permitir instalar
-        });
+        function pwaBase() {
+            return location.href.substring(0, location.href.lastIndexOf('/') + 1);
+        }
 
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
-                deferredPrompt = null;
+        function pwaManifest() {
+            var m = {
+                name: 'TV Player',
+                short_name: 'TV',
+                start_url: pwaBase(),
+                display: 'standalone',
+                background_color: '#0a1929',
+                theme_color: '#0a1929',
+                icons: [{
+                    src: pwaBase() + 'favicon.ico',
+                    sizes: '512x512',
+                    type: 'image/svg+xml',
+                    purpose: 'any'
+                }]
+            };
+            var b = new Blob([JSON.stringify(m)], { type: 'application/manifest+json' });
+            var l = document.getElementById('pwa_manifest');
+            if (!l) {
+                l = document.createElement('link');
+                l.id = 'pwa_manifest';
+                l.rel = 'manifest';
+                document.head.appendChild(l);
             }
+            l.href = URL.createObjectURL(b);
+        }
+
+        setTimeout(pwaManifest, 500);
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            pwaDeferred = e;
         });
 
-        // --- RESTANTE DO CÓDIGO ---
+        window.addEventListener('appinstalled', function() {
+            var b = document.getElementById('pwa_btn');
+            if (b) b.style.display = 'none';
+        });
+
+        function pwaInstall() {
+            if (pwaDeferred) {
+                pwaDeferred.prompt();
+                pwaDeferred.userChoice.then(function(c) {
+                    if (c.outcome === 'accepted') {
+                        pwaDeferred = null;
+                        document.getElementById('pwa_btn').style.display = 'none';
+                    }
+                });
+            } else {
+                var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                alert(ios 
+                    ? 'Para instalar: toque em Compartilhar e depois em "Adicionar à Tela de Início" 📲'
+                    : 'Para instalar: toque no menu ⋮ e depois em "Adicionar à tela inicial" 📲'
+                );
+            }
+        }
+
+        // --- RESTANTE DO CÓDIGO INALTERADO ---
         function getLogoUrl(id) {
             const logoMap = {
                 "globosp": "https://i.ibb.co/Cpm2HM3s/globo.webp",
@@ -414,8 +508,6 @@
 
         function renderChannels() {
             listContainer.innerHTML = "";
-            let totalRendered = 0;
-
             channelData.forEach(category => {
                 const catLabel = document.createElement('div');
                 catLabel.className = 'category-label';
@@ -454,7 +546,6 @@
                     card.appendChild(logoContainer);
                     card.addEventListener('click', () => playChannel(channel.id, channel.name, card));
                     listContainer.appendChild(card);
-                    totalRendered++;
                 });
             });
         }
@@ -498,12 +589,6 @@
                 }
             }
         }
-
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && screen.orientation && screen.orientation.unlock) {
-                screen.orientation.unlock();
-            }
-        });
 
         renderChannels();
     </script>
