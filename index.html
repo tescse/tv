@@ -1,367 +1,511 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>TV Player</title>
-<meta name="theme-color" content="#0a1929"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="TV Player"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<link rel="manifest" href="manifest.json"/>
-<link rel="icon" type="image/svg+xml" href="icon.svg"/>
-<link rel="apple-touch-icon" href="icon-192.png"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--bg:#0a0a0a;--card:#1a1a1a;--card2:#252525;--accent:#4CAF50;--text:#fff;--muted:#888;--border:#2a2a2a;--r:16px}
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);user-select:none;-webkit-user-select:none}
-.wrap{height:100vh;height:100dvh;max-width:600px;margin:0 auto;position:relative;display:flex;flex-direction:column;background:#000}
-.hidden{display:none!important}
-.boot-shell{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-.boot-shell .ico{font-size:64px}
-.boot-shell .title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#4CAF50,#2196F3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.player-wrap{position:relative;background:#000;aspect-ratio:16/9;width:100%;flex-shrink:0;overflow:hidden}
-.player-wrap.fullscreen{position:fixed;inset:0;aspect-ratio:auto;z-index:100;max-width:none}
-.iframe-container{width:100%;height:100%;position:relative}
-#main-iframe{width:100%;height:100%;border:none;display:none}
-.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px}
-.placeholder svg{width:64px;height:64px;stroke:#444}
-.placeholder p{font-size:13px}
-.player-controls{position:absolute;top:0;left:0;right:0;padding:12px;padding-top:calc(12px + env(safe-area-inset-top));background:linear-gradient(to bottom,rgba(0,0,0,.85),transparent);display:flex;justify-content:space-between;align-items:center;z-index:10;opacity:1;transition:opacity .3s}
-.player-wrap.hide-controls .player-controls{opacity:0}
-.channel-title{color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;max-width:60%;overflow:hidden}
-.channel-title .live{background:var(--accent);color:#000;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;flex-shrink:0}
-.controls{display:flex;gap:6px}
-.ctrl-btn{width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.ctrl-btn:active{background:var(--accent);border-color:var(--accent)}
-.ctrl-btn svg{width:20px;height:20px;fill:currentColor;stroke:currentColor}
-.content{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg)}
-.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
-.tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.search-wrap{padding:10px 12px 6px;background:var(--bg);flex-shrink:0}
-.search-input{width:100%;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
-.search-input:focus{border-color:var(--accent)}
-.count-line{font-size:11px;color:var(--muted);padding:6px 4px 0;font-weight:700}
-.channel-list{flex:1;overflow-y:auto;padding:0 12px 90px}
-.channel-list::-webkit-scrollbar{width:4px}
-.channel-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.category{margin-bottom:16px}
-.category-title{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--accent);letter-spacing:.5px;padding:8px 4px;margin-bottom:8px}
-.channels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.channel-card{aspect-ratio:1;background:var(--card);border:2px solid var(--border);border-radius:10px;position:relative;cursor:pointer;overflow:hidden;transition:all .15s}
-.channel-card:active{transform:scale(.97)}
-.channel-card.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(76,175,80,.3)}
-.channel-card .logo-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:10px}
-.channel-card img{max-width:100%;max-height:100%;object-fit:contain}
-.channel-card .fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#2a4a6b,#1a3a5c);border-radius:8px}
-.channel-card .fav-btn{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
-.channel-card .fav-btn.fav{color:#ff4757}
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
-.empty-state .big{font-size:40px;margin-bottom:10px;display:block}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
-.nav-item{flex:1;text-align:center;padding:10px 0 8px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px}
-.nav-item .ico{font-size:20px}
-.nav-item.active{color:var(--accent)}
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 8px 20px rgba(0,0,0,.3)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#pwa_btn{position:fixed;bottom:70px;right:16px;z-index:9999;background:#4CAF50;color:#000;border:none;border-radius:999px;padding:12px 18px;font-weight:800;font-size:13px;box-shadow:0 8px 20px rgba(76,175,80,.35);cursor:pointer;display:none}
-.player-wrap.fullscreen + .content,.player-wrap.fullscreen ~ .bottom-nav,.player-wrap.fullscreen ~ #pwa_btn{display:none}
-@media (orientation:landscape) and (max-height:500px){.player-wrap.fullscreen{height:100vh}}
-@media (min-width:601px){.wrap{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Player TV Study</title>
+    
+    <!-- CONFIGURAÇÕES PWA (ADICIONADO) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a1929">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TV Player">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1929' rx='30'/><text x='96' y='125' font-size='90' text-anchor='middle' fill='%234CAF50' font-family='sans-serif' font-weight='bold'>TV</text></svg>">
+
+    <style>
+        :root {
+            --bg-dark: #0f0f0f;
+            --bg-sidebar: #0a1929;
+            --bg-card: #1a2d42;
+            --accent: #4CAF50;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-layout { display: flex; height: 100vh; }
+
+        .sidebar {
+            width: 380px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid #1a3a5c;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header { 
+            padding: 15px; 
+            background: #0d2137;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        
+        .sidebar-header h2 { 
+            font-size: 1rem; 
+            color: #ffffff; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+
+        .channel-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background-color: var(--bg-sidebar);
+        }
+        
+        .channel-list::-webkit-scrollbar { width: 4px; }
+        .channel-list::-webkit-scrollbar-track { background: transparent; }
+        .channel-list::-webkit-scrollbar-thumb { background: #1a3a5c; border-radius: 2px; }
+
+        .category-label {
+            grid-column: 1 / -1;
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: #7aa3c9;
+            font-weight: 700; 
+            margin: 8px 0 4px 0; 
+            padding: 4px 8px;
+            background: #0d2137;
+            border-radius: 4px;
+        }
+
+        .channel-card {
+            background-color: var(--bg-card);
+            border: 2px solid #2a4a6b;
+            border-radius: 10px;
+            width: 100%;
+            padding-bottom: 100%;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .channel-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border-color: #3a6a9b;
+        }
+
+        .channel-card.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+
+        .logo-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .channel-logo { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+            display: block; 
+        }
+        
+        .channel-logo-fallback {
+            display: flex;
+            width: 100%; 
+            height: 100%; 
+            align-items: center; 
+            justify-content: center;
+            font-weight: 800; 
+            font-size: 1.2rem; 
+            color: #ffffff;
+            background: linear-gradient(135deg, #2a4a6b, #1a3a5c);
+            border-radius: 8px;
+        }
+
+        .player-section { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #000; 
+            position: relative; 
+        }
+
+        .player-top-bar {
+            padding: 12px 20px; 
+            background: rgba(20, 20, 20, 0.95); 
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #333; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center; 
+            z-index: 20;
+        }
+
+        .channel-info { display: flex; align-items: center; gap: 12px; }
+        #current-channel-title { font-size: 1rem; font-weight: 600; color: #fff; }
+
+        .controls { display: flex; gap: 8px; }
+        .control-btn {
+            background: #333; 
+            border: 1px solid #444; 
+            color: #fff;
+            width: 36px; 
+            height: 36px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        .control-btn:hover { background: var(--accent); border-color: var(--accent); }
+        .control-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .iframe-container { flex: 1; position: relative; width: 100%; height: 100%; background: #000; }
+        #main-iframe { width: 100%; height: 100%; border: none; display: none; }
+
+        .placeholder-screen {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            text-align: center; 
+            color: #888;
+        }
+        .placeholder-screen svg { width: 64px; height: 64px; margin-bottom: 15px; stroke: #444; }
+
+        .iframe-container:fullscreen { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .iframe-container:fullscreen #main-iframe { width: 100%; height: 100%; display: block; }
+
+        @media (max-width: 768px) {
+            .app-layout { flex-direction: column; }
+            .sidebar { width: 100%; height: 50%; order: 2; }
+            .player-section { height: 50%; order: 1; }
+            .channel-list { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+        }
+
+        @media (max-width: 400px) {
+            .channel-list { gap: 6px; padding: 8px; }
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
 
-<div id="screen_boot">
- <div class="boot-shell">
-  <div class="ico">📺</div>
-  <div class="title">TV Player</div>
-  <div class="spinner"></div>
-  <div style="color:var(--muted);font-size:13px">Carregando canais...</div>
- </div>
-</div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📺 Canais</h2>
+            </div>
+            <div class="channel-list" id="channel-list-container"></div>
+        </aside>
 
-<div id="screen_app" class="hidden" style="display:flex;flex-direction:column;flex:1">
-  <div class="player-wrap" id="player-wrap">
-    <div class="iframe-container">
-      <div class="placeholder" id="placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        <p>Selecione um canal</p>
-      </div>
-      <iframe id="main-iframe" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>
+        <main class="player-section">
+            <div class="player-top-bar">
+                <div class="channel-info">
+                    <span style="color: var(--accent); font-size: 1rem;">●</span>
+                    <span id="current-channel-title">Selecione um canal</span>
+                </div>
+                <div class="controls">
+                    <!-- BOTÃO DE INSTALAR (ADICIONADO) -->
+                    <button class="control-btn" id="install-btn" title="Instalar App" style="display: none;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L12 14M12 14L7 9M12 14L17 9M5 20L19 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    </button>
+
+                    <button class="control-btn" id="play-pause-btn" title="Play/Pause" onclick="togglePlayPause()">
+                        <svg id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <svg id="icon-pause" viewBox="0 0 24 24" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    </button>
+                    <button class="control-btn" title="Tela Cheia" onclick="toggleFullscreen()">
+                        <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="iframe-container" id="iframe-container">
+                <div class="placeholder-screen" id="placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <p style="font-size: 0.85rem;">Toque em um canal para iniciar</p>
+                </div>
+                
+                <iframe 
+                    id="main-iframe" 
+                    src="" 
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; microphone; camera" 
+                    allowfullscreen
+                    referrerpolicy="no-referrer">
+                </iframe>
+            </div>
+        </main>
     </div>
-    <div class="player-controls">
-      <div class="channel-title">
-        <span class="live" id="live-badge" style="display:none">AO VIVO</span>
-        <span id="channel-title">TV Player</span>
-      </div>
-      <div class="controls">
-        <button class="ctrl-btn" id="fav-current" onclick="toggleFavCurrent()" title="Favoritar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        </button>
-        <button class="ctrl-btn" onclick="toggleFullscreen()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <div class="content">
-    <div class="tabs">
-      <div class="tab active" data-tab="all" onclick="switchTab('all')">📺 Todos</div>
-      <div class="tab" data-tab="favorites" onclick="switchTab('favorites')">❤️ Favoritos</div>
-      <div class="tab" data-tab="recent" onclick="switchTab('recent')">🕐 Recentes</div>
-    </div>
-    <div class="search-wrap">
-      <input type="text" class="search-input" id="search" placeholder="🔍 Buscar canal..."/>
-      <div class="count-line" id="channel_count"></div>
-    </div>
-    <div class="channel-list" id="channel-list"></div>
-  </div>
+    <script>
+        // --- LÓGICA DE INSTALAÇÃO PWA (ADICIONADO) ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
 
-  <div class="bottom-nav">
-    <div class="nav-item active" onclick="goHome()"><span class="ico">📺</span><span>TV</span></div>
-    <div class="nav-item" onclick="switchTab('favorites')"><span class="ico">❤️</span><span>Favoritos</span></div>
-    <div class="nav-item" onclick="switchTab('recent')"><span class="ico">🕐</span><span>Recentes</span></div>
-  </div>
-</div>
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex'; // Mostra o botão apenas se o navegador permitir instalar
+        });
 
-</div>
-<div class="toast" id="toast"></div>
-<button id="pwa_btn" onclick="pwaInstall()">📲 Instalar app</button>
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
 
-<script>
-// ===== SERVICE WORKER =====
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(r=>console.log('✅ SW:',r.scope)).catch(e=>console.warn('❌ SW:',e)));
-}
+        // --- RESTANTE DO CÓDIGO ---
+        function getLogoUrl(id) {
+            const logoMap = {
+                "globosp": "https://i.ibb.co/Cpm2HM3s/globo.webp",
+                "record": "https://i.ibb.co/DSF58Yz/record.png",
+                "sbt": "https://i.ibb.co/pjRjgW94/sbtsp.png",
+                "redetv": "https://i.ibb.co/hxZhB6hr/redetv.png",
+                "bandsp": "https://i.ibb.co/B5Mq76Nq/bandsp.png",
+                "sportv": "https://i.ibb.co/HDcyFYV2/sportv.png",
+                "sportv2": "https://i.ibb.co/tpWMfSrL/sportv2.png",
+                "sportv3": "https://i.ibb.co/0pF06xMN/sportv3.png",
+                "tvcultura": "https://i.ibb.co/DffwQptc/tvcultura.png",
+                "band": "https://i.ibb.co/5QgFks5/band.png",
+                "bandnews": "https://i.ibb.co/3YGLYTjt/bandnews.png",
+                "recordnews": "https://i.ibb.co/PfYm668/recordnews.png",
+                "cnnbrasil": "https://i.ibb.co/HfrwqNkH/cnnbrasil.png",
+                "espn": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn2": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn3": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "espn4": "https://i.ibb.co/vxkWtTTL/espn.png",
+                "premiere7": "https://i.ibb.co/VcxZjS7Y/premiere.png",
+                "combate": "https://i.ibb.co/PZz7kk5r/combate.png",
+                "bandsports": "https://i.ibb.co/FkjYG14t/bandsports.png",
+                "xsports": "https://i.ibb.co/S4nLTTp1/xsports-1.png",
+                "hbo": "https://i.ibb.co/HD9Wn7vy/hbo.png",
+                "hbo2": "https://i.ibb.co/SD7VNyJf/hbo2.png",
+                "hbofamily": "https://i.ibb.co/G442rptb/hbofamily.png",
+                "hboplus": "https://i.ibb.co/twyX4rFH/hboplus.png",
+                "hbosignature": "https://i.ibb.co/Rk1SswRr/hbosignature.png",
+                "max": "https://i.ibb.co/FkJQVyyf/max.png",
+                "telecinepremium": "https://i.ibb.co/xqk1yBy4/tcpremium.png",
+                "telecineaction": "https://i.ibb.co/BHWJ4SHq/tcaction.png",
+                "telecinecult": "https://i.ibb.co/v630bPJn/tccult.png",
+                "telecinefun": "https://i.ibb.co/ymTvmqkW/tcfun.png",
+                "telecinepipoca": "https://i.ibb.co/hJW8BD4g/tcpipoca.png",
+                "space": "https://i.ibb.co/93CVX8VQ/space.png",
+                "cinemax": "https://i.ibb.co/Fqn4DF1x/cinemax.png",
+                "megapix": "https://i.ibb.co/qFV92hxQ/megapix.png",
+                "axn": "https://i.ibb.co/qFnF3sRx/axn.png",
+                "sonychannel": "https://i.ibb.co/3568ND4g/sonychannel.png",
+                "warnerchannel": "https://i.ibb.co/Tq47nZMC/warnertv.png",
+                "comedycentral": "https://i.ibb.co/VW6gwr2C/comedycentral.png",
+                "ae": "https://i.ibb.co/qM59Dt3d/aee.png",
+                "discoverychannel": "https://i.ibb.co/dwykbTv5/discoverychannel.png",
+                "discoveryhh": "https://i.ibb.co/m3N4Fvs/discoveryhh.png",
+                "discoveryscience": "https://i.ibb.co/rfMTWY70/discoveryscience.png",
+                "discoveryturbo": "https://i.ibb.co/sp9G9wSy/discoveryturbo.png",
+                "history": "https://i.ibb.co/20h0Lsyc/history2.png",
+                "history2": "https://i.ibb.co/20h0Lsyc/history2.png",
+                "animalplanet": "https://i.ibb.co/jPZRZgzG/animalplanet.png",
+                "off": "https://i.ibb.co/RpWTy8Bm/canaloff.png",
+                "gnt": "https://i.ibb.co/xt000F8P/gnt.png",
+                "cartoonnetwork": "https://i.ibb.co/mF1wW6mS/cartoonnetwork.png",
+                "cartoonito": "https://i.ibb.co/KxPKb8zG/cartoonito.png",
+                "discoverykids": "https://i.ibb.co/ZpZt0JN3/disneyplus.png",
+                "nickelodeon": "https://i.ibb.co/Hf132WJx/nickelodeon.png",
+                "nickjr": "https://i.ibb.co/HDGMCpZ7/nickjr.png",
+                "disneyplus": "https://i.ibb.co/ZpZt0JN3/disneyplus.png",
+                "paramountplus": "https://i.ibb.co/8L12R946/paramountplus.png"
+            };
+            return logoMap[id] || null;
+        }
 
-/* ===== LISTA COMPLETA DE CANAIS (IDÊNTICA AO ORIGINAL — 56 CANAIS) ===== */
-const logoMap={
-  "globosp":"https://i.ibb.co/Cpm2HM3s/globo.webp",
-  "record":"https://i.ibb.co/DSF58Yz/record.png",
-  "sbt":"https://i.ibb.co/pjRjgW94/sbtsp.png",
-  "redetv":"https://i.ibb.co/hxZhB6hr/redetv.png",
-  "bandsp":"https://i.ibb.co/B5Mq76Nq/bandsp.png",
-  "sportv":"https://i.ibb.co/HDcyFYV2/sportv.png",
-  "sportv2":"https://i.ibb.co/tpWMfSrL/sportv2.png",
-  "sportv3":"https://i.ibb.co/0pF06xMN/sportv3.png",
-  "tvcultura":"https://i.ibb.co/DffwQptc/tvcultura.png",
-  "band":"https://i.ibb.co/5QgFks5/band.png",
-  "bandnews":"https://i.ibb.co/3YGLYTjt/bandnews.png",
-  "recordnews":"https://i.ibb.co/PfYm668/recordnews.png",
-  "cnnbrasil":"https://i.ibb.co/HfrwqNkH/cnnbrasil.png",
-  "espn":"https://i.ibb.co/vxkWtTTL/espn.png",
-  "espn2":"https://i.ibb.co/vxkWtTTL/espn.png",
-  "espn3":"https://i.ibb.co/vxkWtTTL/espn.png",
-  "espn4":"https://i.ibb.co/vxkWtTTL/espn.png",
-  "premiere7":"https://i.ibb.co/VcxZjS7Y/premiere.png",
-  "combate":"https://i.ibb.co/PZz7kk5r/combate.png",
-  "bandsports":"https://i.ibb.co/FkjYG14t/bandsports.png",
-  "xsports":"https://i.ibb.co/S4nLTTp1/xsports-1.png",
-  "hbo":"https://i.ibb.co/HD9Wn7vy/hbo.png",
-  "hbo2":"https://i.ibb.co/SD7VNyJf/hbo2.png",
-  "hbofamily":"https://i.ibb.co/G442rptb/hbofamily.png",
-  "hboplus":"https://i.ibb.co/twyX4rFH/hboplus.png",
-  "hbosignature":"https://i.ibb.co/Rk1SswRr/hbosignature.png",
-  "max":"https://i.ibb.co/FkJQVyyf/max.png",
-  "telecinepremium":"https://i.ibb.co/xqk1yBy4/tcpremium.png",
-  "telecineaction":"https://i.ibb.co/BHWJ4SHq/tcaction.png",
-  "telecinecult":"https://i.ibb.co/v630bPJn/tccult.png",
-  "telecinefun":"https://i.ibb.co/ymTvmqkW/tcfun.png",
-  "telecinepipoca":"https://i.ibb.co/hJW8BD4g/tcpipoca.png",
-  "space":"https://i.ibb.co/93CVX8VQ/space.png",
-  "cinemax":"https://i.ibb.co/Fqn4DF1x/cinemax.png",
-  "megapix":"https://i.ibb.co/qFV92hxQ/megapix.png",
-  "axn":"https://i.ibb.co/qFnF3sRx/axn.png",
-  "sonychannel":"https://i.ibb.co/3568ND4g/sonychannel.png",
-  "warnerchannel":"https://i.ibb.co/Tq47nZMC/warnertv.png",
-  "comedycentral":"https://i.ibb.co/VW6gwr2C/comedycentral.png",
-  "ae":"https://i.ibb.co/qM59Dt3d/aee.png",
-  "discoverychannel":"https://i.ibb.co/dwykbTv5/discoverychannel.png",
-  "discoveryhh":"https://i.ibb.co/m3N4Fvs/discoveryhh.png",
-  "discoveryscience":"https://i.ibb.co/rfMTWY70/discoveryscience.png",
-  "discoveryturbo":"https://i.ibb.co/sp9G9wSy/discoveryturbo.png",
-  "history":"https://i.ibb.co/20h0Lsyc/history2.png",
-  "history2":"https://i.ibb.co/20h0Lsyc/history2.png",
-  "animalplanet":"https://i.ibb.co/jPZRZgzG/animalplanet.png",
-  "off":"https://i.ibb.co/RpWTy8Bm/canaloff.png",
-  "gnt":"https://i.ibb.co/xt000F8P/gnt.png",
-  "cartoonnetwork":"https://i.ibb.co/mF1wW6mS/cartoonnetwork.png",
-  "cartoonito":"https://i.ibb.co/KxPKb8zG/cartoonito.png",
-  "discoverykids":"https://i.ibb.co/ZpZt0JN3/disneyplus.png",
-  "nickelodeon":"https://i.ibb.co/Hf132WJx/nickelodeon.png",
-  "nickjr":"https://i.ibb.co/HDGMCpZ7/nickjr.png",
-  "disneyplus":"https://i.ibb.co/ZpZt0JN3/disneyplus.png",
-  "paramountplus":"https://i.ibb.co/8L12R946/paramountplus.png"
-};
+        const channelData = [
+            { category: "TV Aberta", items: [
+                { id: "globosp", name: "Globo SP" }, { id: "record", name: "Record TV" },
+                { id: "sbt", name: "SBT" }, { id: "redetv", name: "RedeTV!" },
+                { id: "tvcultura", name: "TV Cultura" }, { id: "band", name: "Band" },
+                { id: "bandsp", name: "Band SP" }
+            ]},
+            { category: "Notícias", items: [
+                { id: "cnnbrasil", name: "CNN Brasil" }, { id: "recordnews", name: "Record News" },
+                { id: "bandnews", name: "Band News" }
+            ]},
+            { category: "Esportes", items: [
+                { id: "espn", name: "ESPN" }, { id: "espn2", name: "ESPN 2" },
+                { id: "espn3", name: "ESPN 3" }, { id: "espn4", name: "ESPN 4" },
+                { id: "sportv", name: "SporTV" }, { id: "sportv2", name: "SporTV 2" },
+                { id: "sportv3", name: "SporTV 3" }, { id: "premiere7", name: "Premiere" },
+                { id: "combate", name: "Combate" }, { id: "bandsports", name: "Band Sports" },
+                { id: "xsports", name: "XSports" }
+            ]},
+            { category: "Filmes e Séries", items: [
+                { id: "hbo", name: "HBO" }, { id: "hbo2", name: "HBO 2" },
+                { id: "hbofamily", name: "HBO Family" }, { id: "hboplus", name: "HBO Plus" },
+                { id: "hbosignature", name: "HBO Signature" }, { id: "max", name: "Max" },
+                { id: "telecinepremium", name: "TC Premium" }, { id: "telecineaction", name: "TC Action" },
+                { id: "telecinecult", name: "TC Cult" }, { id: "telecinefun", name: "TC Fun" },
+                { id: "telecinepipoca", name: "TC Pipoca" },
+                { id: "space", name: "Space" }, { id: "cinemax", name: "Cinemax" },
+                { id: "megapix", name: "Megapix" }, { id: "axn", name: "AXN" },
+                { id: "sonychannel", name: "Sony" }, { id: "warnerchannel", name: "Warner" },
+                { id: "comedycentral", name: "Comedy" }, { id: "ae", name: "A&E" }
+            ]},
+            { category: "Documentários", items: [
+                { id: "discoverychannel", name: "Discovery" },
+                { id: "discoveryhh", name: "Discovery H&H" },
+                { id: "discoveryscience", name: "Discovery Science" },
+                { id: "discoveryturbo", name: "Discovery Turbo" },
+                { id: "history", name: "History" }, { id: "history2", name: "History 2" },
+                { id: "animalplanet", name: "Animal Planet" }, { id: "off", name: "Canal Off" },
+                { id: "gnt", name: "GNT" }
+            ]},
+            { category: "Infantil", items: [
+                { id: "cartoonnetwork", name: "Cartoon" },
+                { id: "cartoonito", name: "Cartoonito" },
+                { id: "discoverykids", name: "Discovery Kids" },
+                { id: "nickelodeon", name: "Nickelodeon" },
+                { id: "nickjr", name: "Nick Jr." },
+                { id: "disneyplus", name: "Disney+" },
+                { id: "paramountplus", name: "Paramount+" }
+            ]}
+        ];
 
-const channelData=[
-  { category:"TV Aberta", items:[
-    { id:"globosp", name:"Globo SP" }, { id:"record", name:"Record TV" },
-    { id:"sbt", name:"SBT" }, { id:"redetv", name:"RedeTV!" },
-    { id:"tvcultura", name:"TV Cultura" }, { id:"band", name:"Band" },
-    { id:"bandsp", name:"Band SP" }
-  ]},
-  { category:"Notícias", items:[
-    { id:"cnnbrasil", name:"CNN Brasil" }, { id:"recordnews", name:"Record News" },
-    { id:"bandnews", name:"Band News" }
-  ]},
-  { category:"Esportes", items:[
-    { id:"espn", name:"ESPN" }, { id:"espn2", name:"ESPN 2" },
-    { id:"espn3", name:"ESPN 3" }, { id:"espn4", name:"ESPN 4" },
-    { id:"sportv", name:"SporTV" }, { id:"sportv2", name:"SporTV 2" },
-    { id:"sportv3", name:"SporTV 3" }, { id:"premiere7", name:"Premiere" },
-    { id:"combate", name:"Combate" }, { id:"bandsports", name:"Band Sports" },
-    { id:"xsports", name:"XSports" }
-  ]},
-  { category:"Filmes e Séries", items:[
-    { id:"hbo", name:"HBO" }, { id:"hbo2", name:"HBO 2" },
-    { id:"hbofamily", name:"HBO Family" }, { id:"hboplus", name:"HBO Plus" },
-    { id:"hbosignature", name:"HBO Signature" }, { id:"max", name:"Max" },
-    { id:"telecinepremium", name:"TC Premium" }, { id:"telecineaction", name:"TC Action" },
-    { id:"telecinecult", name:"TC Cult" }, { id:"telecinefun", name:"TC Fun" },
-    { id:"telecinepipoca", name:"TC Pipoca" },
-    { id:"space", name:"Space" }, { id:"cinemax", name:"Cinemax" },
-    { id:"megapix", name:"Megapix" }, { id:"axn", name:"AXN" },
-    { id:"sonychannel", name:"Sony" }, { id:"warnerchannel", name:"Warner" },
-    { id:"comedycentral", name:"Comedy" }, { id:"ae", name:"A&E" }
-  ]},
-  { category:"Documentários", items:[
-    { id:"discoverychannel", name:"Discovery" },
-    { id:"discoveryhh", name:"Discovery H&H" },
-    { id:"discoveryscience", name:"Discovery Science" },
-    { id:"discoveryturbo", name:"Discovery Turbo" },
-    { id:"history", name:"History" }, { id:"history2", name:"History 2" },
-    { id:"animalplanet", name:"Animal Planet" }, { id:"off", name:"Canal Off" },
-    { id:"gnt", name:"GNT" }
-  ]},
-  { category:"Infantil", items:[
-    { id:"cartoonnetwork", name:"Cartoon" },
-    { id:"cartoonito", name:"Cartoonito" },
-    { id:"discoverykids", name:"Discovery Kids" },
-    { id:"nickelodeon", name:"Nickelodeon" },
-    { id:"nickjr", name:"Nick Jr." },
-    { id:"disneyplus", name:"Disney+" },
-    { id:"paramountplus", name:"Paramount+" }
-  ]}
-];
+        const listContainer = document.getElementById('channel-list-container');
+        const mainIframe = document.getElementById('main-iframe');
+        const iframeContainer = document.getElementById('iframe-container');
+        const placeholder = document.getElementById('placeholder');
+        const channelTitle = document.getElementById('current-channel-title');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        
+        let isPlaying = false;
+        const BASE_URL = "https://sinalpublicoetv.vercel.app/?id=";
 
-const TOTAL_CANAIS=channelData.reduce((a,c)=>a+c.items.length,0);
+        function renderChannels() {
+            listContainer.innerHTML = "";
+            let totalRendered = 0;
 
-const BASE_URL="https://sinalpublicoetv.vercel.app/?id=";
-const $=id=>document.getElementById(id);
-let currentTab='all',currentChannel=null;
-let favorites=JSON.parse(localStorage.getItem('tv_favorites')||'[]');
-let recent=JSON.parse(localStorage.getItem('tv_recent')||'[]');
+            channelData.forEach(category => {
+                const catLabel = document.createElement('div');
+                catLabel.className = 'category-label';
+                catLabel.textContent = category.category;
+                listContainer.appendChild(catLabel);
 
-function toast(m,t='ok'){
-  const e=$('toast');e.textContent=m;
-  e.style.background=t==='err'?'#ef4444':'#4CAF50';
-  e.style.color=t==='err'?'#fff':'#000';
-  e.classList.add('show');
-  clearTimeout(e._tm);e._tm=setTimeout(()=>e.classList.remove('show'),2500);
-}
+                category.items.forEach(channel => {
+                    const card = document.createElement('button');
+                    card.className = 'channel-card';
+                    card.type = 'button';
+                    card.title = channel.name;
+                    
+                    const logoUrl = getLogoUrl(channel.id);
+                    const initials = channel.name.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase() || 'TV';
 
-/* ===== PWA (PADRÃO ANOTE: MANIFEST DINÂMICO + BOTÃO FIXO) ===== */
-var pwaDeferred=null;
-function pwaBase(){return location.href.substring(0,location.href.lastIndexOf('/')+1)}
-function pwaManifest(){
-  var m={name:'TV Player',short_name:'TV Player',description:'Assista seus canais favoritos',start_url:pwaBase(),display:'standalone',background_color:'#0a0a0a',theme_color:'#0a1929',icons:[{src:pwaBase()+'icon.svg',sizes:'512x512',type:'image/svg+xml',purpose:'any'},{src:pwaBase()+'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:pwaBase()+'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
-  var b=new Blob([JSON.stringify(m)],{type:'application/manifest+json'});
-  var l=document.getElementById('pwa_manifest');
-  if(!l){l=document.createElement('link');l.id='pwa_manifest';l.rel='manifest';document.head.appendChild(l)}
-  l.href=URL.createObjectURL(b);
-}
-setTimeout(pwaManifest,500);
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pwaDeferred=e;document.getElementById('pwa_btn').style.display='block'});
-window.addEventListener('appinstalled',function(){document.getElementById('pwa_btn').style.display='none';toast('App instalado! 🎉')});
-function pwaInstall(){
-  if(pwaDeferred){pwaDeferred.prompt();pwaDeferred.userChoice.then(function(c){if(c.outcome==='accepted'){pwaDeferred=null;document.getElementById('pwa_btn').style.display='none'}})}
-  else{var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);toast(ios?'Compartilhar → "Adicionar à Tela de Início" 📲':'Menu ⋮ → "Adicionar à tela inicial" 📲')}
-}
+                    const logoContainer = document.createElement('div');
+                    logoContainer.className = 'logo-container';
 
-/* ===== RENDER ===== */
-function renderChannels(){
-  const q=$('search').value.toLowerCase().trim();
-  let html='',total=0;
-  if(currentTab==='favorites'){
-    const favs=[];
-    channelData.forEach(cat=>cat.items.forEach(ch=>{if(favorites.includes(ch.id)&&(!q||ch.name.toLowerCase().includes(q)))favs.push(ch)}));
-    if(!favs.length){$('channel-list').innerHTML='<div class="empty-state"><span class="big">❤️</span>Nenhum favorito ainda.<br>Toque no ❤ em qualquer canal!</div>';updateCount(0);return}
-    html=renderGrid(favs,'Favoritos');total=favs.length;
-  }else if(currentTab==='recent'){
-    const recs=[];
-    recent.forEach(id=>{channelData.forEach(cat=>{const ch=cat.items.find(c=>c.id===id);if(ch&&(!q||ch.name.toLowerCase().includes(q))&&!recs.includes(ch))recs.push(ch)})});
-    if(!recs.length){$('channel-list').innerHTML='<div class="empty-state"><span class="big">🕐</span>Nenhum canal assistido ainda.</div>';updateCount(0);return}
-    html=renderGrid(recs,'Assistidos recentemente');total=recs.length;
-  }else{
-    channelData.forEach(cat=>{
-      const f=cat.items.filter(ch=>!q||ch.name.toLowerCase().includes(q));
-      if(f.length){html+=`<div class="category"><div class="category-title">${cat.category} (${f.length})</div><div class="channels-grid">${f.map(ch=>renderCard(ch)).join('')}</div></div>`;total+=f.length}
-    });
-  }
-  if(!total)$('channel-list').innerHTML='<div class="empty-state"><span class="big">🔍</span>Nenhum canal encontrado.</div>';
-  else $('channel-list').innerHTML=html;
-  updateCount(total);
-}
-function updateCount(n){$('channel_count').textContent=`📺 ${n} de ${TOTAL_CANAIS} canais disponíveis`}
-function renderGrid(ch,title){return`<div class="category"><div class="category-title">${title} (${ch.length})</div><div class="channels-grid">${ch.map(c=>renderCard(c)).join('')}</div></div>`}
-function renderCard(ch){
-  const logo=logoMap[ch.id];
-  const ini=ch.name.replace(/[^a-zA-Z]/g,'').substring(0,2).toUpperCase()||'TV';
-  const isFav=favorites.includes(ch.id);
-  const isAct=currentChannel&&currentChannel.id===ch.id;
-  return`<div class="channel-card ${isAct?'active':''}" onclick="playChannel('${ch.id}','${ch.name.replace(/'/g,"\\'")}')"><button class="fav-btn ${isFav?'fav':''}" onclick="event.stopPropagation();toggleFav('${ch.id}')" type="button">${isFav?'❤️':'🤍'}</button><div class="logo-wrap">${logo?`<img src="${logo}" alt="${ch.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="fallback" style="display:none">${ini}</div>`:`<div class="fallback">${ini}</div>`}</div></div>`;
-}
+                    const fallback = document.createElement('div');
+                    fallback.className = 'channel-logo-fallback';
+                    fallback.textContent = initials;
+                    logoContainer.appendChild(fallback);
 
-/* ===== AÇÕES ===== */
-function switchTab(t){currentTab=t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));$('search').value='';renderChannels()}
-function goHome(){switchTab('all')}
-function playChannel(id,name){
-  $('channel-title').textContent=name;$('placeholder').style.display='none';
-  $('main-iframe').style.display='block';
-  $('main-iframe').src=`${BASE_URL}${id}&t=${Date.now()}`;
-  $('live-badge').style.display='inline-block';
-  currentChannel={id,name};
-  recent=recent.filter(r=>r!==id);recent.unshift(id);recent=recent.slice(0,20);
-  localStorage.setItem('tv_recent',JSON.stringify(recent));
-  updateFavBtn();toast('▶ '+name);renderChannels();
-}
-function toggleFav(id){
-  if(favorites.includes(id)){favorites=favorites.filter(f=>f!==id);toast('Removido dos favoritos')}
-  else{favorites.push(id);toast('Adicionado aos favoritos ❤️')}
-  localStorage.setItem('tv_favorites',JSON.stringify(favorites));updateFavBtn();renderChannels();
-}
-function toggleFavCurrent(){if(!currentChannel)return toast('Selecione um canal','err');toggleFav(currentChannel.id)}
-function updateFavBtn(){$('fav-current').style.color=currentChannel&&favorites.includes(currentChannel.id)?'#ff4757':'#fff'}
-function toggleFullscreen(){
-  const pw=$('player-wrap');
-  if(!document.fullscreenElement){pw.requestFullscreen().catch(()=>{});pw.classList.add('fullscreen');if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{})}
-  else{document.exitFullscreen();pw.classList.remove('fullscreen');if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock()}
-}
-document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement){$('player-wrap').classList.remove('fullscreen');if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock()}});
-$('search').addEventListener('input',renderChannels);
-let hideTimer;$('player-wrap').addEventListener('click',()=>{$('player-wrap').classList.remove('hide-controls');clearTimeout(hideTimer);hideTimer=setTimeout(()=>$('player-wrap').classList.add('hide-controls'),3000)});
+                    if (logoUrl) {
+                        const img = document.createElement('img');
+                        img.src = logoUrl;
+                        img.alt = channel.name;
+                        img.className = 'channel-logo';
+                        
+                        img.onload = function() { fallback.style.display = 'none'; };
+                        img.onerror = function() { this.style.display = 'none'; fallback.style.display = 'flex'; };
+                        
+                        logoContainer.appendChild(img);
+                    }
 
-/* ===== BOOT ===== */
-async function boot(){
-  await new Promise(r=>setTimeout(r,600));
-  $('screen_boot').classList.add('hidden');
-  $('screen_app').classList.remove('hidden');
-  renderChannels();
-  const last=localStorage.getItem('tv_last_channel');
-  if(last){try{const{id,name}=JSON.parse(last);if(confirm(`Continuar assistindo ${name}?`))playChannel(id,name)}catch(e){}}
-}
-window.addEventListener('beforeunload',()=>{if(currentChannel)localStorage.setItem('tv_last_channel',JSON.stringify(currentChannel))});
-boot();
-window.switchTab=switchTab;window.goHome=goHome;window.playChannel=playChannel;window.toggleFav=toggleFav;window.toggleFavCurrent=toggleFavCurrent;window.toggleFullscreen=toggleFullscreen;window.pwaInstall=pwaInstall;
-</script>
+                    card.appendChild(logoContainer);
+                    card.addEventListener('click', () => playChannel(channel.id, channel.name, card));
+                    listContainer.appendChild(card);
+                    totalRendered++;
+                });
+            });
+        }
+
+        function playChannel(channelId, channelName, activeCard) {
+            channelTitle.textContent = channelName;
+            placeholder.style.display = 'none';
+            mainIframe.style.display = 'block';
+            mainIframe.src = `${BASE_URL}${channelId}&t=${Date.now()}`;
+            
+            isPlaying = true;
+            updatePlayPauseIcon();
+
+            document.querySelectorAll('.channel-card').forEach(c => c.classList.remove('active'));
+            activeCard.classList.add('active');
+            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function togglePlayPause() {
+            if (!mainIframe.src || mainIframe.src === window.location.href) return;
+            isPlaying = !isPlaying;
+            updatePlayPauseIcon();
+            try { mainIframe.contentWindow.postMessage({ action: isPlaying ? 'play' : 'pause' }, '*'); } catch (e) {}
+        }
+
+        function updatePlayPauseIcon() {
+            iconPlay.style.display = isPlaying ? 'none' : 'block';
+            iconPause.style.display = isPlaying ? 'block' : 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                iframeContainer.requestFullscreen().catch(err => console.log(`Erro: ${err.message}`));
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(e => console.log("Orientação bloqueada:", e));
+                }
+            } else {
+                document.exitFullscreen();
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        });
+
+        renderChannels();
+    </script>
 </body>
 </html>
