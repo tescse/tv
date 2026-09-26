@@ -182,6 +182,17 @@
             .channel-list { gap: 6px; padding: 8px; }
         }
     </style>
+    
+    <!-- ✅ Registro do Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('❌ Erro no Service Worker:', err));
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -225,17 +236,19 @@
     </nav>
 
     <script>
-        // ✅ PWA — Manifesto externo carregado no <head>
+        // ✅ PWA
         var pwaDeferred = null;
 
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             pwaDeferred = e;
+            console.log('✅ Prompt de instalação disponível');
         });
 
         window.addEventListener('appinstalled', function() {
             var b = document.getElementById('pwa_btn');
             if (b) b.style.display = 'none';
+            console.log('✅ App instalado com sucesso!');
         });
 
         function pwaInstall() {
@@ -250,8 +263,8 @@
             } else {
                 var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
                 alert(ios 
-                    ? 'Para instalar: toque em Compartilhar e depois em "Adicionar à Tela de Início" 📲'
-                    : 'Para instalar: toque no menu ⋮ e depois em "Adicionar à tela inicial" 📲'
+                    ? 'Para instalar: toque em Compartilhar → Adicionar à Tela de Início 📲'
+                    : 'Aguarde carregar ou abra em aba anônima para ver o botão 📲'
                 );
             }
         }
