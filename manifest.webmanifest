@@ -1,0 +1,17 @@
+{
+  "name": "TV Player",
+  "short_name": "TV",
+  "description": "Assista seus canais favoritos",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a1929",
+  "theme_color": "#0a1929",
+  "icons": [
+    {
+     "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
